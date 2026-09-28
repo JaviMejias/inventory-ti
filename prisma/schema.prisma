@@ -1,0 +1,220 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  JEFE
+  COORDINADOR
+  SOPORTE
+}
+
+enum ProductTrackingMode {
+  QUANTITY
+  ASSET
+}
+
+enum AssetStatus {
+  AVAILABLE
+  ASSIGNED
+  RESERVED
+  UNDER_REVIEW
+  IN_REPAIR
+  IN_WARRANTY
+  LOST
+  DECOMMISSIONED
+}
+
+enum MovementType {
+  INITIAL
+  ENTRY
+  EXIT
+  RETURN
+  ADJUSTMENT
+}
+
+enum CorrectionStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model User {
+  id                   String              @id @default(uuid()) @db.Uuid
+  username             String              @unique @db.VarChar(100)
+  email                String?             @unique @db.VarChar(255)
+  displayName          String              @db.VarChar(150)
+  phone                String?             @db.VarChar(40)
+  passwordHash         String?             @db.VarChar(255)
+  role                 Role                @default(SOPORTE)
+  isActive             Boolean             @default(true)
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+  performedMovements   InventoryMovement[] @relation("MovementPerformedBy")
+  requestedCorrections CorrectionRequest[] @relation("CorrectionRequester")
+  reviewedCorrections  CorrectionRequest[] @relation("CorrectionReviewer")
+  assignments          Assignment[]        @relation("AssignmentPerson")
+  createdAssignments   Assignment[]        @relation("AssignmentCreatedBy")
+  endedAssignments     Assignment[]        @relation("AssignmentEndedBy")
+  auditLogs            AuditLog[]
+  sessions             Session[]
+  activationCodes      ActivationCode[]
+
+  @@index([isActive])
+}
+
+model ActivationCode {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @db.Uuid
+  codeHash  String    @unique @db.VarChar(64)
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Restrict)
+
+  @@index([userId, expiresAt])
+  @@index([userId, usedAt])
+}
+
+model Product {
+  id                String              @id @default(uuid()) @db.Uuid
+  name              String              @db.VarChar(160)
+  sku               String?             @unique @db.VarChar(100)
+  trackingMode      ProductTrackingMode
+  lowStockThreshold Int                 @default(0)
+  isActive          Boolean             @default(true)
+  inactivatedAt     DateTime?
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  stocks            InventoryStock[]
+  assets            Asset[]
+  movements         InventoryMovement[]
+
+  @@index([isActive])
+}
+
+model InventoryStock {
+  id        String   @id @default(uuid()) @db.Uuid
+  productId String   @unique @db.Uuid
+  quantity  Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+}
+
+model Asset {
+  id               String              @id @default(uuid()) @db.Uuid
+  productId        String              @db.Uuid
+  assetTag         String?             @unique @db.VarChar(100)
+  serialNumber     String?             @db.VarChar(160)
+  status           AssetStatus         @default(AVAILABLE)
+  isActive         Boolean             @default(true)
+  decommissionedAt DateTime?
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+  product          Product             @relation(fields: [productId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  assignments      Assignment[]
+  movements        InventoryMovement[]
+
+  @@unique([productId, serialNumber])
+  @@index([productId, status])
+}
+
+model InventoryMovement {
+  id                    String              @id @default(uuid()) @db.Uuid
+  productId             String              @db.Uuid
+  assetId               String?             @db.Uuid
+  performedById         String?             @db.Uuid
+  movementType          MovementType
+  quantity              Int
+  reason                String?             @db.Text
+  reference             String?             @db.VarChar(160)
+  effectiveAt           DateTime            @default(now())
+  createdAt             DateTime            @default(now())
+  product               Product             @relation(fields: [productId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  asset                 Asset?              @relation(fields: [assetId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  performedBy           User?               @relation("MovementPerformedBy", fields: [performedById], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  originalFor           CorrectionRequest[] @relation("OriginalMovement")
+  compensatingFor       CorrectionRequest?  @relation("CompensatingMovement")
+
+  @@index([productId, effectiveAt])
+  @@index([assetId, effectiveAt])
+  @@index([performedById, effectiveAt])
+  @@index([movementType, effectiveAt])
+}
+
+model Assignment {
+  id          String    @id @default(uuid()) @db.Uuid
+  assetId     String    @db.Uuid
+  personId    String?   @db.Uuid
+  personName  String    @db.VarChar(150)
+  createdById String    @db.Uuid
+  endedById   String?   @db.Uuid
+  startedAt   DateTime
+  endedAt     DateTime?
+  createdAt   DateTime  @default(now())
+  asset       Asset     @relation(fields: [assetId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  person      User?     @relation("AssignmentPerson", fields: [personId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  createdBy   User      @relation("AssignmentCreatedBy", fields: [createdById], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  endedBy     User?     @relation("AssignmentEndedBy", fields: [endedById], references: [id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@index([assetId, endedAt])
+  @@index([personId, endedAt])
+  @@index([createdById])
+  @@index([endedById])
+}
+
+model CorrectionRequest {
+  id                     String             @id @default(uuid()) @db.Uuid
+  originalMovementId     String             @db.Uuid
+  compensatingMovementId String?            @unique @db.Uuid
+  requestedById          String             @db.Uuid
+  reviewedById           String?            @db.Uuid
+  status                 CorrectionStatus   @default(PENDING)
+  reason                 String             @db.Text
+  delta                  Int
+  correctedQuantity      Int
+  reviewedAt             DateTime?
+  createdAt              DateTime           @default(now())
+  updatedAt              DateTime           @updatedAt
+  originalMovement       InventoryMovement  @relation("OriginalMovement", fields: [originalMovementId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  compensatingMovement   InventoryMovement? @relation("CompensatingMovement", fields: [compensatingMovementId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  requestedBy            User               @relation("CorrectionRequester", fields: [requestedById], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  reviewedBy             User?              @relation("CorrectionReviewer", fields: [reviewedById], references: [id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@index([originalMovementId])
+  @@index([status, createdAt])
+  @@index([requestedById, createdAt])
+}
+
+model AuditLog {
+  id         String   @id @default(uuid()) @db.Uuid
+  userId     String?  @db.Uuid
+  action     String   @db.VarChar(120)
+  entityType String   @db.VarChar(120)
+  entityId   String?  @db.VarChar(100)
+  metadata   Json?
+  createdAt  DateTime @default(now())
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull, onUpdate: Restrict)
+
+  @@index([userId, createdAt])
+  @@index([entityType, entityId, createdAt])
+  @@index([action, createdAt])
+}
+
+model Session {
+  id         String   @id @default(uuid()) @db.Uuid
+  tokenHash  String   @unique @db.VarChar(128)
+  userId     String   @db.Uuid
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  lastUsedAt DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Restrict)
+
+  @@index([userId, expiresAt])
+  @@index([expiresAt])
+}

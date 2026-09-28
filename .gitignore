@@ -1,0 +1,16 @@
+node_modules/
+dist/
+coverage/
+.playwright-cli/
+output/playwright/
+.turbo/
+.vite/
+*.tsbuildinfo
+
+.env
+.env.*
+!.env.example
+
+prisma/*.db
+prisma/*.db-journal
+backups/inventory-ti-pre-corrections-*.dump

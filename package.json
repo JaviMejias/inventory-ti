@@ -1,0 +1,37 @@
+{
+  "name": "inventory-ti",
+  "private": true,
+  "packageManager": "pnpm@11.19.0",
+  "engines": {
+    "node": ">=24.0.0 <25.0.0",
+    "pnpm": ">=11.0.0 <12.0.0"
+  },
+  "scripts": {
+    "dev": "pnpm --parallel --filter @inventory-ti/api --filter @inventory-ti/web dev",
+    "dev:api": "pnpm --filter @inventory-ti/api dev",
+    "dev:web": "pnpm --filter @inventory-ti/web dev",
+    "lint": "eslint .",
+    "test": "pnpm --filter @inventory-ti/api test",
+    "typecheck": "pnpm -r typecheck",
+    "build": "pnpm -r build",
+    "prisma:validate": "pnpm --filter @inventory-ti/api prisma:validate",
+    "prisma:migrate": "pnpm --filter @inventory-ti/api prisma:migrate",
+    "db:generate": "pnpm --filter @inventory-ti/api prisma:generate",
+    "db:migrate": "pnpm db:generate && pnpm prisma:migrate",
+    "bootstrap:admin": "pnpm --filter @inventory-ti/api bootstrap:admin"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.17.0",
+    "@types/node": "^22.10.5",
+    "@typescript-eslint/eslint-plugin": "^8.19.1",
+    "@typescript-eslint/parser": "^8.19.1",
+    "eslint": "^9.17.0",
+    "eslint-import-resolver-typescript": "^3.7.0",
+    "eslint-plugin-import": "^2.31.0",
+    "eslint-plugin-react-hooks": "^5.1.0",
+    "eslint-plugin-react-refresh": "^0.4.16",
+    "@prisma/client": "^6.1.0",
+    "prisma": "^6.1.0",
+    "typescript": "^5.7.2"
+  }
+}

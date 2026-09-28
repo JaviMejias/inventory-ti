@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Inventory TI · Mapa de arquitectura",
+    "output": "inventory-ti-architecture.html",
+    "quality_profile": "showcase",
+    "views": [
+      { "id": "request-path", "label": "Recorrido principal", "focus": ["web-client", "api", "inventory", "db"], "note": "Desde las vistas React hasta el stock y los movimientos persistidos." },
+      { "id": "dashboard-read-model", "label": "Dashboard de consulta", "focus": ["web-client", "api", "catalog", "inventory", "corrections"], "note": "La ruta / consolida indicadores, gráficos, alertas y correcciones pendientes; no es un módulo persistente ni modifica una entidad propia." },
+      { "id": "identity-and-access", "label": "Identidad y permisos", "focus": ["web-client", "api", "auth", "users", "db"], "note": "Sesión, CSRF y roles JEFE, COORDINADOR y SOPORTE." },
+      { "id": "catalog-and-inventory", "label": "Catálogo e inventario", "focus": ["web-client", "api", "catalog", "inventory", "db"], "note": "Productos, stock, movimientos, activos y asignaciones." },
+      { "id": "corrections", "label": "Correcciones", "focus": ["web-client", "api", "corrections", "inventory", "db"], "note": "Solicitud de ajuste, revisión del JEFE y movimiento compensatorio." }
+    ]
+  },
+  "components": [
+    { "id": "web-client", "type": "frontend", "label": "Aplicación web", "sublabel": "React + Vite · Dashboard de consulta", "tag": "Inicio · Catálogo · Inventario", "pos": [40, 290], "size": [190, 82] },
+    { "id": "api", "type": "backend", "label": "API de aplicación", "sublabel": "Fastify + TypeScript", "tag": "localhost:3000", "pos": [315, 290], "size": [190, 82] },
+    { "id": "auth", "type": "security", "label": "Autenticación y roles", "sublabel": "Sesiones · CSRF · permisos", "tag": "JEFE / COORDINADOR / SOPORTE", "pos": [590, 100], "size": [205, 82] },
+    { "id": "catalog", "type": "backend", "label": "Catálogo", "sublabel": "Productos", "tag": "trackingMode", "pos": [590, 230], "size": [205, 82] },
+    { "id": "inventory", "type": "backend", "label": "Inventario", "sublabel": "Stock · activos · asignaciones", "tag": "movimientos", "pos": [590, 360], "size": [205, 82] },
+    { "id": "corrections", "type": "backend", "label": "Correcciones", "sublabel": "Solicitudes · revisión · compensación", "tag": "solo JEFE aprueba", "pos": [590, 490], "size": [205, 82] },
+    { "id": "users", "type": "backend", "label": "Administración", "sublabel": "Usuarios · cuentas · roles", "tag": "solo JEFE", "pos": [885, 100], "size": [190, 82] },
+    { "id": "db", "type": "database", "label": "Base de datos", "sublabel": "PostgreSQL + Prisma", "tag": "estado persistente", "pos": [885, 340], "size": [190, 82] }
+  ],
+  "boundaries": [
+    { "kind": "region", "label": "Cliente web", "wraps": ["web-client"], "pad": 24 },
+    { "kind": "region", "label": "Servidor de aplicación · Fastify", "wraps": ["api", "auth", "catalog", "inventory", "corrections", "users"], "pad": 28 },
+    { "kind": "region", "label": "Persistencia", "wraps": ["db"], "pad": 24 }
+  ],
+  "connections": [
+    { "id": "web-to-api", "from": "web-client", "to": "api", "label": "HTTP JSON + cookie de sesión", "variant": "emphasis", "labelDy": 65 },
+    { "id": "api-to-auth", "from": "api", "to": "auth", "label": "autenticar / autorizar", "variant": "security" },
+    { "id": "api-to-catalog", "from": "api", "to": "catalog" },
+    { "id": "api-to-inventory", "from": "api", "to": "inventory" },
+    { "id": "api-to-corrections", "from": "api", "to": "corrections" },
+    { "id": "api-to-users", "from": "api", "to": "users", "fromSide": "top", "toSide": "top", "via": [[410, 50], [980, 50]] },
+    { "id": "auth-to-db", "from": "auth", "to": "db", "variant": "security" },
+    { "id": "catalog-to-db", "from": "catalog", "to": "db" },
+    { "id": "inventory-to-db", "from": "inventory", "to": "db" },
+    { "id": "corrections-to-inventory", "from": "corrections", "to": "inventory", "label": "movimiento compensatorio", "variant": "dashed" },
+    { "id": "corrections-to-db", "from": "corrections", "to": "db" },
+    { "id": "users-to-db", "from": "users", "to": "db" }
+  ]
+}
