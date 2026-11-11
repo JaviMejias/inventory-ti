@@ -23,7 +23,7 @@ cp .env.example .env   # then edit DATABASE_URL
 `GET /health` returns `{"service":"api","status":"ok"}`. If it is not reachable:
 
 - Confirm the API is listening (`API_HOST`/`API_PORT`, default `0.0.0.0:3000`).
-- Confirm `WEB_ORIGIN` matches the origin you connect from (CORS is single-origin).
+- For browser access, confirm `WEB_ORIGIN` matches the browser origin (CORS is single-origin). CORS does not block a direct server-side health request.
 - If the port is occupied, change `API_PORT`.
 
 ## `COOKIE_SECURE` error on startup
@@ -33,20 +33,45 @@ The API refuses to start with `NODE_ENV=production` and `COOKIE_SECURE=false`. S
 ## Login fails with "Invalid username/email or password"
 
 - Confirm the user is active (`isActive = true`).
+- If the account is pending (`ACCOUNT_PENDING`), complete activation and log in again; administrative activation alone does not configure a password.
 - Confirm the password meets the policy: at least 12 characters, including a letter and a number.
 - Confirm `DATABASE_URL` points at the database that contains the user.
 
-## `Bootstrap refused: ... user(s) already exist`
+## Bootstrap refuses because users already exist
 
-The bootstrap administrator can only be created on an **empty** user table. To add more users, log in as `JEFE` and use the user-management endpoints/UI. Do not reset the database just to re-run bootstrap.
+The command reports `Ya existen ... usuario(s)`. Bootstrap can only create the first administrator on an **empty** user table. To add more users, log in as `JEFE` and use the user-management endpoints/UI. Do not reset the database just to rerun bootstrap.
+
+Invalid fields in interactive mode are requested again without restarting; password requirements are displayed before entry, and mismatched confirmation repeats only that confirmation. With piped input, invalid/incomplete fields terminate the command nonzero rather than consuming extra retry lines. See [users.md](users.md).
 
 ## Tests fail with connection errors
 
-The tests connect to PostgreSQL via `DATABASE_URL`. Ensure PostgreSQL is running and the database exists:
+The launcher uses credentials from `TEST_DATABASE_URL` or `DATABASE_URL` to create a disposable database through the server's `postgres` database. Ensure server access and `CREATEDB`; the application database is not the fixture target. Never bypass the isolation guard or run individual integration files against live inventory.
 
 ```bash
-psql "postgresql://postgres:postgres@localhost:5432/inventory_ti" -c "SELECT 1"
+psql --dbname=postgres --command='SELECT current_user, rolcreatedb FROM pg_roles WHERE rolname = current_user;'
 ```
+
+Configure libpq host/user/password securely for this diagnostic; it does not load `DATABASE_URL` automatically.
+
+## `/health` is green but database requests return 500
+
+`/health` is process liveness only. Check PostgreSQL with the runtime credentials, migration status using [database.md](database.md), and API logs. An unapplied `0011_correction_final_quantity` can leave correction queries incompatible with the deployed client. Review backups and pending SQL before `pnpm db:migrate`; do not reset the database.
+
+## `LAST_ADMIN_REQUIRED` or `SELF_ACCESS_RESET`
+
+The API protects the last active JEFE with a configured password. A pending/inactive replacement does not count. Activate and verify a second JEFE before deactivation/demotion/reset; use `/auth/password` for your own password. See [users.md](users.md).
+
+## Activation code lost or expired
+
+Codes expire after 24 hours and cannot be read back. Another JEFE issues `/users/:id/reset-access`, revoking old password/sessions/codes. Administrative `/activate` only enables the account; password setup still requires `/auth/activate`, followed by separate login.
+
+## Stock conflicts or blocked product tracking mode
+
+`INSUFFICIENT_STOCK` uses locked current product stock, not an old list value. Refresh reads and verify the product ID and quantity in the request. `STOCK_LIMIT_EXCEEDED` rejects 32-bit stock overflow. `PRODUCT_TRACKING_MODE_LOCKED` protects products with any stock row, movement or asset; it is not an invitation to delete history. Corrections submit the final signed movement effect, not final product stock or an extra movement amount; see [corrections.md](../technical/corrections.md).
+
+## A migration failed
+
+Keep writers stopped and inspect actual schema and `_prisma_migrations`. Earlier migrations may already be applied. Follow [failed migration recovery](database.md#failed-migrations); never blindly mark it applied, edit an applied SQL file or use force-reset.
 
 ## Prisma client is out of date after a schema change
 

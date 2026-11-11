@@ -7,10 +7,11 @@ import { ApiError } from '../lib/errors.js';
 import { hashPassword, verifyPassword } from '../lib/password.js';
 import { clearSessionCookie, csrfToken, login, requireAuthenticated, requireCsrf, requireRole, setSessionCookie, toPublicUser } from './service.js';
 import { accountUpdateSchema, activationSchema, changePasswordSchema, loginSchema, userCreateSchema, userIdSchema, userListQuerySchema, userUpdateSchema } from './schemas.js';
+import { createAttemptLimiter } from './rate-limit.js';
+import { ensureAdministratorRemains, requireUserAdministration } from './administrator-guard.js';
 
 const loginAttemptWindowMs = 15 * 60 * 1000;
 const loginAttemptLimit = 10;
-const loginAttempts = new Map<string, { count: number; resetAt: number }>();
 
 function parse<T>(schema: { safeParse: (input: unknown) => { success: true; data: T } | { success: false; error: { issues: unknown[] } } }, input: unknown): T {
   const result = schema.safeParse(input);
@@ -36,7 +37,6 @@ type DatabaseClient = PrismaClient | Prisma.TransactionClient;
 const activationCodeTtlMs = 24 * 60 * 60 * 1000;
 const activationAttemptWindowMs = 15 * 60 * 1000;
 const activationAttemptLimit = 10;
-const activationAttempts = new Map<string, { count: number; resetAt: number }>();
 
 function hashActivationCode(code: string): string {
   return createHash('sha256').update(code).digest('hex');
@@ -62,21 +62,6 @@ async function issueActivationCode(database: Prisma.TransactionClient, userId: s
   return generated.code;
 }
 
-function checkActivationRateLimit(key: string): void {
-  const now = Date.now();
-  const attempt = activationAttempts.get(key);
-  if (attempt && attempt.resetAt > now && attempt.count >= activationAttemptLimit) {
-    throw new ApiError(429, 'RATE_LIMITED', 'Too many activation attempts');
-  }
-}
-
-function recordActivationFailure(key: string): void {
-  const now = Date.now();
-  const attempt = activationAttempts.get(key);
-  const current = attempt && attempt.resetAt > now ? attempt : { count: 0, resetAt: now + activationAttemptWindowMs };
-  activationAttempts.set(key, { count: current.count + 1, resetAt: current.resetAt });
-}
-
 async function getUserOrFail(database: DatabaseClient, id: string) {
   const user = await database.user.findUnique({ where: { id } });
   if (!user) {
@@ -90,23 +75,18 @@ async function writeAudit(database: DatabaseClient, userId: string, action: stri
 }
 
 export function registerAuthRoutes(app: FastifyInstance, database: PrismaClient): void {
+  const beginLogin = createAttemptLimiter(loginAttemptLimit, loginAttemptWindowMs, 'Too many login attempts');
+  const beginActivation = createAttemptLimiter(activationAttemptLimit, activationAttemptWindowMs, 'Too many activation attempts');
   app.post('/auth/login', async (request, reply) => {
     const input = parse(loginSchema, request.body);
-    const now = Date.now();
-    const attempt = loginAttempts.get(request.ip);
-    if (attempt && attempt.resetAt > now && attempt.count >= loginAttemptLimit) {
-      throw new ApiError(429, 'RATE_LIMITED', 'Too many login attempts');
-    }
+    const complete = beginLogin(request.ip);
 
     let result;
     try {
       result = await login(database, input.identifier, input.password);
-      loginAttempts.delete(request.ip);
+      complete('success');
     } catch (error) {
-      if (error instanceof ApiError && error.code === 'INVALID_CREDENTIALS') {
-        const current = attempt && attempt.resetAt > now ? attempt : { count: 0, resetAt: now + loginAttemptWindowMs };
-        loginAttempts.set(request.ip, { count: current.count + 1, resetAt: current.resetAt });
-      }
+      complete(error instanceof ApiError && ['INVALID_CREDENTIALS', 'ACCOUNT_PENDING'].includes(error.code) ? 'failure' : 'cancel');
       throw error;
     }
     await setSessionCookie(reply, result.token, result.expiresAt);
@@ -134,7 +114,7 @@ export function registerAuthRoutes(app: FastifyInstance, database: PrismaClient)
   app.get('/auth/csrf', { preHandler: requireAuthenticated(database) }, async (request) => ({ csrfToken: csrfToken(request) }));
   app.post('/auth/activate', async (request) => {
     const input = parse(activationSchema, request.body);
-    checkActivationRateLimit(request.ip);
+    const complete = beginActivation(request.ip);
     try {
       const user = await database.$transaction(async (transaction) => {
         const initialCode = await transaction.activationCode.findUnique({ where: { codeHash: hashActivationCode(input.activationCode) } });
@@ -157,12 +137,10 @@ export function registerAuthRoutes(app: FastifyInstance, database: PrismaClient)
         await writeAudit(transaction, updatedUser.id, 'PASSWORD_SETUP', updatedUser.id, { activation: true });
         return updatedUser;
       });
-      activationAttempts.delete(request.ip);
+      complete('success');
       return { user: toPublicUser(user) };
     } catch (error) {
-      if (error instanceof ApiError && error.code === 'INVALID_ACTIVATION_CODE') {
-        recordActivationFailure(request.ip);
-      }
+      complete(error instanceof ApiError && error.code === 'INVALID_ACTIVATION_CODE' ? 'failure' : 'cancel');
       throw error;
     }
   });
@@ -218,6 +196,7 @@ export function registerAuthRoutes(app: FastifyInstance, database: PrismaClient)
     const input = parse(userCreateSchema, request.body);
     try {
       const result = await database.$transaction(async (transaction) => {
+        await requireUserAdministration(transaction, request.auth!.user.id);
         const createdUser = await transaction.user.create({ data: { ...input, passwordHash: null, role: input.role as Role } });
         const activationCode = await issueActivationCode(transaction, createdUser.id);
         await writeAudit(transaction, request.auth!.user.id, 'USER_CREATED', createdUser.id, { role: createdUser.role });
@@ -234,7 +213,10 @@ export function registerAuthRoutes(app: FastifyInstance, database: PrismaClient)
     const input = parse(userUpdateSchema, request.body);
     try {
       const user = await database.$transaction(async (transaction) => {
-        await getUserOrFail(transaction, id);
+        await requireUserAdministration(transaction, request.auth!.user.id);
+        await lockUser(transaction, id);
+        const current = await getUserOrFail(transaction, id);
+        await ensureAdministratorRemains(transaction, current, input.role === undefined ? {} : { role: input.role });
         const updatedUser = await transaction.user.update({ where: { id }, data: input });
         await writeAudit(transaction, request.auth!.user.id, 'USER_UPDATED', updatedUser.id, { fields: Object.keys(input) });
         return updatedUser;
@@ -247,9 +229,12 @@ export function registerAuthRoutes(app: FastifyInstance, database: PrismaClient)
 
   app.post('/users/:id/reset-access', { preHandler: [requireRole(database, Role.JEFE), requireCsrf] }, async (request) => {
     const { id } = parse(userIdSchema, request.params);
+    if (id === request.auth!.user.id) throw new ApiError(403, 'SELF_ACCESS_RESET', 'Use the account password-change workflow instead');
     const result = await database.$transaction(async (transaction) => {
+      await requireUserAdministration(transaction, request.auth!.user.id);
       await lockUser(transaction, id);
-      await getUserOrFail(transaction, id);
+      const current = await getUserOrFail(transaction, id);
+      await ensureAdministratorRemains(transaction, current, { passwordHash: null });
       const updatedUser = await transaction.user.update({ where: { id }, data: { passwordHash: null } });
       await transaction.session.deleteMany({ where: { userId: id } });
       const activationCode = await issueActivationCode(transaction, id);
@@ -266,8 +251,10 @@ export function registerAuthRoutes(app: FastifyInstance, database: PrismaClient)
 async function updateUserStatus(database: PrismaClient, request: FastifyRequest, isActive: boolean) {
   const { id } = parse(userIdSchema, request.params);
   const user = await database.$transaction(async (transaction) => {
+    await requireUserAdministration(transaction, request.auth!.user.id);
     await lockUser(transaction, id);
-    await getUserOrFail(transaction, id);
+    const current = await getUserOrFail(transaction, id);
+    await ensureAdministratorRemains(transaction, current, { isActive });
     const updatedUser = await transaction.user.update({ where: { id }, data: { isActive } });
     if (!isActive) {
       await transaction.session.deleteMany({ where: { userId: id } });

@@ -1,4 +1,18 @@
+import { isIP } from 'node:net';
 import { z } from 'zod';
+
+const trustedProxySchema = z.string().default('loopback').transform((value, context): false | string[] => {
+  if (value === 'false') return false;
+  const proxies = value.split(',').map((proxy) => proxy.trim());
+  const valid = proxies.every((proxy) => {
+    if (proxy === 'loopback') return true;
+    const [address, prefix, extra] = proxy.split('/');
+    const version = isIP(address ?? '');
+    return version !== 0 && extra === undefined && (prefix === undefined || (/^\d+$/.test(prefix) && Number(prefix) > 0 && Number(prefix) <= (version === 4 ? 32 : 128)));
+  });
+  if (!valid) context.addIssue({ code: z.ZodIssueCode.custom, message: 'TRUST_PROXY must be false, loopback, or a comma-separated list of trusted IP addresses/CIDRs' });
+  return proxies;
+});
 
 const environmentSchema = z.object({
   DATABASE_URL: z.string().url(),
@@ -6,6 +20,7 @@ const environmentSchema = z.object({
   API_HOST: z.string().default('0.0.0.0'),
   API_PORT: z.coerce.number().int().positive().default(3000),
   WEB_ORIGIN: z.string().url().default('http://localhost:5173'),
+  TRUST_PROXY: trustedProxySchema,
   SESSION_SECRET: z.string().min(32),
   SESSION_TTL_HOURS: z.coerce.number().int().positive().default(8),
   COOKIE_SECURE: z.preprocess((value) => value === 'true' || value === true, z.boolean()).default(false),
@@ -28,6 +43,7 @@ export function parseEnvironment(source: typeof process.env = process.env) {
     API_HOST: source.API_HOST,
     API_PORT: source.API_PORT,
     WEB_ORIGIN: source.WEB_ORIGIN,
+    TRUST_PROXY: source.TRUST_PROXY,
     SESSION_SECRET: sessionSecret,
     SESSION_TTL_HOURS: source.SESSION_TTL_HOURS,
     COOKIE_SECURE: source.COOKIE_SECURE,

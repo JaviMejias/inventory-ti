@@ -2,8 +2,17 @@
   "findings": [
     {
       "category": "unresolved",
+      "file": "apps/web/src/features/admin/UsersPage.tsx",
+      "line": 207,
+      "message": "Native select is used without an explicit ownership decision.",
+      "remediation": "Record Select/Listbox as native or reuse the authored canonical owner.",
+      "ruleId": "ownership.native-select-undecided",
+      "severity": "error"
+    },
+    {
+      "category": "unresolved",
       "file": "apps/web/src/features/home/AssetsPage.tsx",
-      "line": 113,
+      "line": 100,
       "message": "Native select is used without an explicit ownership decision.",
       "remediation": "Record Select/Listbox as native or reuse the authored canonical owner.",
       "ruleId": "ownership.native-select-undecided",
@@ -12,7 +21,7 @@
     {
       "category": "unresolved",
       "file": "apps/web/src/features/home/AssignmentPanel.tsx",
-      "line": 174,
+      "line": 163,
       "message": "Native select is used without an explicit ownership decision.",
       "remediation": "Record Select/Listbox as native or reuse the authored canonical owner.",
       "ruleId": "ownership.native-select-undecided",
@@ -21,7 +30,7 @@
     {
       "category": "unresolved",
       "file": "apps/web/src/features/home/CatalogPage.tsx",
-      "line": 235,
+      "line": 160,
       "message": "Native select is used without an explicit ownership decision.",
       "remediation": "Record Select/Listbox as native or reuse the authored canonical owner.",
       "ruleId": "ownership.native-select-undecided",
@@ -30,7 +39,16 @@
     {
       "category": "unresolved",
       "file": "apps/web/src/features/home/CorrectionsPage.tsx",
-      "line": 57,
+      "line": 238,
+      "message": "Native select is used without an explicit ownership decision.",
+      "remediation": "Record Select/Listbox as native or reuse the authored canonical owner.",
+      "ruleId": "ownership.native-select-undecided",
+      "severity": "error"
+    },
+    {
+      "category": "unresolved",
+      "file": "apps/web/src/features/home/HomePage.tsx",
+      "line": 94,
       "message": "Native select is used without an explicit ownership decision.",
       "remediation": "Record Select/Listbox as native or reuse the authored canonical owner.",
       "ruleId": "ownership.native-select-undecided",
@@ -39,7 +57,16 @@
     {
       "category": "unresolved",
       "file": "apps/web/src/features/home/InventoryPage.tsx",
-      "line": 89,
+      "line": 178,
+      "message": "Native select is used without an explicit ownership decision.",
+      "remediation": "Record Select/Listbox as native or reuse the authored canonical owner.",
+      "ruleId": "ownership.native-select-undecided",
+      "severity": "error"
+    },
+    {
+      "category": "unresolved",
+      "file": "apps/web/src/ui/primitives/DatePicker.tsx",
+      "line": 65,
       "message": "Native select is used without an explicit ownership decision.",
       "remediation": "Record Select/Listbox as native or reuse the authored canonical owner.",
       "ruleId": "ownership.native-select-undecided",
@@ -47,83 +74,488 @@
     },
     {
       "category": "violation",
-      "file": "apps/web/src/features/home/AssetsPage.tsx",
-      "line": 167,
-      "message": "Application-owned form does not declare its validation owner.",
-      "remediation": "Add noValidate/novalidate and implement the canonical validation contract.",
-      "ruleId": "form.novalidate-missing",
+      "file": "docs/inventory-ti-architecture.html",
+      "line": 4982,
+      "message": "Enabled literal button has no detectable action or submit behavior.",
+      "remediation": "Connect the button to a real action, make it a submit button, or disable/remove it.",
+      "ruleId": "affordance.actionless-button",
       "severity": "error"
     },
     {
       "category": "violation",
-      "file": "apps/web/src/features/home/AssetsPage.tsx",
-      "line": 175,
-      "message": "Application-owned form does not declare its validation owner.",
-      "remediation": "Add noValidate/novalidate and implement the canonical validation contract.",
-      "ruleId": "form.novalidate-missing",
+      "file": "docs/inventory-ti-architecture.html",
+      "line": 4990,
+      "message": "Enabled literal button has no detectable action or submit behavior.",
+      "remediation": "Connect the button to a real action, make it a submit button, or disable/remove it.",
+      "ruleId": "affordance.actionless-button",
       "severity": "error"
     },
     {
       "category": "violation",
-      "file": "apps/web/src/features/home/AssetsPage.tsx",
-      "line": 183,
-      "message": "Application-owned form does not declare its validation owner.",
-      "remediation": "Add noValidate/novalidate and implement the canonical validation contract.",
-      "ruleId": "form.novalidate-missing",
+      "file": "docs/inventory-ti-architecture.html",
+      "line": 5003,
+      "message": "Enabled literal button has no detectable action or submit behavior.",
+      "remediation": "Connect the button to a real action, make it a submit button, or disable/remove it.",
+      "ruleId": "affordance.actionless-button",
       "severity": "error"
     },
     {
       "category": "violation",
-      "file": "apps/web/src/features/home/AssignmentPanel.tsx",
-      "line": 171,
-      "message": "Application-owned form does not declare its validation owner.",
-      "remediation": "Add noValidate/novalidate and implement the canonical validation contract.",
-      "ruleId": "form.novalidate-missing",
+      "file": "docs/inventory-ti-architecture.html",
+      "line": 5008,
+      "message": "Enabled literal button has no detectable action or submit behavior.",
+      "remediation": "Connect the button to a real action, make it a submit button, or disable/remove it.",
+      "ruleId": "affordance.actionless-button",
       "severity": "error"
     },
     {
       "category": "violation",
-      "file": "apps/web/src/features/home/InventoryPage.tsx",
-      "line": 89,
-      "message": "Application-owned form does not declare its validation owner.",
-      "remediation": "Add noValidate/novalidate and implement the canonical validation contract.",
-      "ruleId": "form.novalidate-missing",
+      "file": "docs/inventory-ti-architecture.html",
+      "line": 5013,
+      "message": "Enabled literal button has no detectable action or submit behavior.",
+      "remediation": "Connect the button to a real action, make it a submit button, or disable/remove it.",
+      "ruleId": "affordance.actionless-button",
       "severity": "error"
     },
     {
       "category": "violation",
-      "file": "apps/web/src/features/home/InventoryPage.tsx",
-      "line": 90,
-      "message": "Application-owned form does not declare its validation owner.",
-      "remediation": "Add noValidate/novalidate and implement the canonical validation contract.",
-      "ruleId": "form.novalidate-missing",
+      "file": "docs/inventory-ti-architecture.html",
+      "line": 5018,
+      "message": "Enabled literal button has no detectable action or submit behavior.",
+      "remediation": "Connect the button to a real action, make it a submit button, or disable/remove it.",
+      "ruleId": "affordance.actionless-button",
       "severity": "error"
     },
     {
       "category": "violation",
-      "file": "apps/web/src/features/home/InventoryPage.tsx",
-      "line": 104,
-      "message": "Application-owned form does not declare its validation owner.",
-      "remediation": "Add noValidate/novalidate and implement the canonical validation contract.",
-      "ruleId": "form.novalidate-missing",
+      "file": "docs/inventory-ti-architecture.html",
+      "line": 5025,
+      "message": "Enabled literal button has no detectable action or submit behavior.",
+      "remediation": "Connect the button to a real action, make it a submit button, or disable/remove it.",
+      "ruleId": "affordance.actionless-button",
       "severity": "error"
     },
     {
       "category": "violation",
-      "file": "apps/web/src/features/home/InventoryPage.tsx",
-      "line": 89,
-      "message": "Literal product textarea does not show evidence of the canonical resize-none rule.",
-      "remediation": "Use the shared Textarea owner or apply resize-none/resize: none with adequate height or auto-grow behavior.",
-      "ruleId": "form.textarea-resize-missing",
+      "file": "docs/inventory-ti-architecture.html",
+      "line": 5032,
+      "message": "Enabled literal button has no detectable action or submit behavior.",
+      "remediation": "Connect the button to a real action, make it a submit button, or disable/remove it.",
+      "ruleId": "affordance.actionless-button",
       "severity": "error"
     },
     {
       "category": "violation",
-      "file": "apps/web/src/features/home/InventoryPage.tsx",
-      "line": 104,
-      "message": "Literal product textarea does not show evidence of the canonical resize-none rule.",
-      "remediation": "Use the shared Textarea owner or apply resize-none/resize: none with adequate height or auto-grow behavior.",
-      "ruleId": "form.textarea-resize-missing",
+      "file": "docs/inventory-ti-architecture.html",
+      "line": 5040,
+      "message": "Enabled literal button has no detectable action or submit behavior.",
+      "remediation": "Connect the button to a real action, make it a submit button, or disable/remove it.",
+      "ruleId": "affordance.actionless-button",
+      "severity": "error"
+    },
+    {
+      "category": "violation",
+      "file": "docs/inventory-ti-architecture.html",
+      "line": 5055,
+      "message": "Enabled literal button has no detectable action or submit behavior.",
+      "remediation": "Connect the button to a real action, make it a submit button, or disable/remove it.",
+      "ruleId": "affordance.actionless-button",
+      "severity": "error"
+    },
+    {
+      "category": "violation",
+      "file": "docs/inventory-ti-architecture.html",
+      "line": 5058,
+      "message": "Enabled literal button has no detectable action or submit behavior.",
+      "remediation": "Connect the button to a real action, make it a submit button, or disable/remove it.",
+      "ruleId": "affordance.actionless-button",
+      "severity": "error"
+    },
+    {
+      "category": "violation",
+      "file": "docs/inventory-ti-architecture.html",
+      "line": 5059,
+      "message": "Enabled literal button has no detectable action or submit behavior.",
+      "remediation": "Connect the button to a real action, make it a submit button, or disable/remove it.",
+      "ruleId": "affordance.actionless-button",
+      "severity": "error"
+    },
+    {
+      "category": "violation",
+      "file": "docs/inventory-ti-architecture.html",
+      "line": 5063,
+      "message": "Enabled literal button has no detectable action or submit behavior.",
+      "remediation": "Connect the button to a real action, make it a submit button, or disable/remove it.",
+      "ruleId": "affordance.actionless-button",
+      "severity": "error"
+    },
+    {
+      "category": "violation",
+      "file": "docs/inventory-ti-architecture.html",
+      "line": 5064,
+      "message": "Enabled literal button has no detectable action or submit behavior.",
+      "remediation": "Connect the button to a real action, make it a submit button, or disable/remove it.",
+      "ruleId": "affordance.actionless-button",
+      "severity": "error"
+    },
+    {
+      "category": "violation",
+      "file": "docs/inventory-ti-architecture.html",
+      "line": 5065,
+      "message": "Enabled literal button has no detectable action or submit behavior.",
+      "remediation": "Connect the button to a real action, make it a submit button, or disable/remove it.",
+      "ruleId": "affordance.actionless-button",
+      "severity": "error"
+    },
+    {
+      "category": "violation",
+      "file": "docs/inventory-ti-architecture.html",
+      "line": 5069,
+      "message": "Enabled literal button has no detectable action or submit behavior.",
+      "remediation": "Connect the button to a real action, make it a submit button, or disable/remove it.",
+      "ruleId": "affordance.actionless-button",
+      "severity": "error"
+    },
+    {
+      "category": "violation",
+      "file": "docs/inventory-ti-architecture.html",
+      "line": 5070,
+      "message": "Enabled literal button has no detectable action or submit behavior.",
+      "remediation": "Connect the button to a real action, make it a submit button, or disable/remove it.",
+      "ruleId": "affordance.actionless-button",
+      "severity": "error"
+    },
+    {
+      "category": "violation",
+      "file": "docs/inventory-ti-architecture.html",
+      "line": 5092,
+      "message": "Enabled literal button has no detectable action or submit behavior.",
+      "remediation": "Connect the button to a real action, make it a submit button, or disable/remove it.",
+      "ruleId": "affordance.actionless-button",
+      "severity": "error"
+    },
+    {
+      "category": "violation",
+      "file": "docs/inventory-ti-architecture.html",
+      "line": 5113,
+      "message": "Enabled literal button has no detectable action or submit behavior.",
+      "remediation": "Connect the button to a real action, make it a submit button, or disable/remove it.",
+      "ruleId": "affordance.actionless-button",
+      "severity": "error"
+    },
+    {
+      "category": "violation",
+      "file": "docs/inventory-ti-architecture.html",
+      "line": 5115,
+      "message": "Enabled literal button has no detectable action or submit behavior.",
+      "remediation": "Connect the button to a real action, make it a submit button, or disable/remove it.",
+      "ruleId": "affordance.actionless-button",
+      "severity": "error"
+    },
+    {
+      "category": "violation",
+      "file": "docs/inventory-ti-architecture.html",
+      "line": 5123,
+      "message": "Enabled literal button has no detectable action or submit behavior.",
+      "remediation": "Connect the button to a real action, make it a submit button, or disable/remove it.",
+      "ruleId": "affordance.actionless-button",
+      "severity": "error"
+    },
+    {
+      "category": "violation",
+      "file": "docs/inventory-ti-architecture.html",
+      "line": 5360,
+      "message": "Enabled literal button has no detectable action or submit behavior.",
+      "remediation": "Connect the button to a real action, make it a submit button, or disable/remove it.",
+      "ruleId": "affordance.actionless-button",
+      "severity": "error"
+    },
+    {
+      "category": "violation",
+      "file": "docs/inventory-ti-architecture.html",
+      "line": 5364,
+      "message": "Enabled literal button has no detectable action or submit behavior.",
+      "remediation": "Connect the button to a real action, make it a submit button, or disable/remove it.",
+      "ruleId": "affordance.actionless-button",
+      "severity": "error"
+    },
+    {
+      "category": "violation",
+      "file": "docs/inventory-ti-architecture.html",
+      "line": 5369,
+      "message": "Enabled literal button has no detectable action or submit behavior.",
+      "remediation": "Connect the button to a real action, make it a submit button, or disable/remove it.",
+      "ruleId": "affordance.actionless-button",
+      "severity": "error"
+    },
+    {
+      "category": "violation",
+      "file": "docs/inventory-ti-architecture.html",
+      "line": 5374,
+      "message": "Enabled literal button has no detectable action or submit behavior.",
+      "remediation": "Connect the button to a real action, make it a submit button, or disable/remove it.",
+      "ruleId": "affordance.actionless-button",
+      "severity": "error"
+    },
+    {
+      "category": "violation",
+      "file": "docs/inventory-ti-architecture.html",
+      "line": 5379,
+      "message": "Enabled literal button has no detectable action or submit behavior.",
+      "remediation": "Connect the button to a real action, make it a submit button, or disable/remove it.",
+      "ruleId": "affordance.actionless-button",
+      "severity": "error"
+    },
+    {
+      "category": "violation",
+      "file": "docs/inventory-ti-architecture.html",
+      "line": 5384,
+      "message": "Enabled literal button has no detectable action or submit behavior.",
+      "remediation": "Connect the button to a real action, make it a submit button, or disable/remove it.",
+      "ruleId": "affordance.actionless-button",
+      "severity": "error"
+    },
+    {
+      "category": "violation",
+      "file": "docs/inventory-ti-architecture.html",
+      "line": 5389,
+      "message": "Enabled literal button has no detectable action or submit behavior.",
+      "remediation": "Connect the button to a real action, make it a submit button, or disable/remove it.",
+      "ruleId": "affordance.actionless-button",
+      "severity": "error"
+    },
+    {
+      "category": "violation",
+      "file": "docs/inventory-ti-architecture.html",
+      "line": 5403,
+      "message": "Enabled literal button has no detectable action or submit behavior.",
+      "remediation": "Connect the button to a real action, make it a submit button, or disable/remove it.",
+      "ruleId": "affordance.actionless-button",
+      "severity": "error"
+    },
+    {
+      "category": "violation",
+      "file": "docs/inventory-ti-architecture.html",
+      "line": 5438,
+      "message": "Enabled literal button has no detectable action or submit behavior.",
+      "remediation": "Connect the button to a real action, make it a submit button, or disable/remove it.",
+      "ruleId": "affordance.actionless-button",
+      "severity": "error"
+    },
+    {
+      "category": "violation",
+      "file": "docs/inventory-ti-architecture.html",
+      "line": 5441,
+      "message": "Enabled literal button has no detectable action or submit behavior.",
+      "remediation": "Connect the button to a real action, make it a submit button, or disable/remove it.",
+      "ruleId": "affordance.actionless-button",
+      "severity": "error"
+    },
+    {
+      "category": "violation",
+      "file": "docs/inventory-ti-architecture.html",
+      "line": 5449,
+      "message": "Enabled literal button has no detectable action or submit behavior.",
+      "remediation": "Connect the button to a real action, make it a submit button, or disable/remove it.",
+      "ruleId": "affordance.actionless-button",
+      "severity": "error"
+    },
+    {
+      "category": "violation",
+      "file": "docs/inventory-ti-architecture.html",
+      "line": 5450,
+      "message": "Enabled literal button has no detectable action or submit behavior.",
+      "remediation": "Connect the button to a real action, make it a submit button, or disable/remove it.",
+      "ruleId": "affordance.actionless-button",
+      "severity": "error"
+    },
+    {
+      "category": "violation",
+      "file": "docs/inventory-ti-architecture.html",
+      "line": 5451,
+      "message": "Enabled literal button has no detectable action or submit behavior.",
+      "remediation": "Connect the button to a real action, make it a submit button, or disable/remove it.",
+      "ruleId": "affordance.actionless-button",
+      "severity": "error"
+    },
+    {
+      "category": "violation",
+      "file": "docs/inventory-ti-architecture.html",
+      "line": 5463,
+      "message": "Enabled literal button has no detectable action or submit behavior.",
+      "remediation": "Connect the button to a real action, make it a submit button, or disable/remove it.",
+      "ruleId": "affordance.actionless-button",
+      "severity": "error"
+    },
+    {
+      "category": "violation",
+      "file": "docs/inventory-ti-architecture.html",
+      "line": 5464,
+      "message": "Enabled literal button has no detectable action or submit behavior.",
+      "remediation": "Connect the button to a real action, make it a submit button, or disable/remove it.",
+      "ruleId": "affordance.actionless-button",
+      "severity": "error"
+    },
+    {
+      "category": "violation",
+      "file": "docs/inventory-ti-architecture.html",
+      "line": 5465,
+      "message": "Enabled literal button has no detectable action or submit behavior.",
+      "remediation": "Connect the button to a real action, make it a submit button, or disable/remove it.",
+      "ruleId": "affordance.actionless-button",
+      "severity": "error"
+    },
+    {
+      "category": "violation",
+      "file": "docs/inventory-ti-architecture.html",
+      "line": 5472,
+      "message": "Enabled literal button has no detectable action or submit behavior.",
+      "remediation": "Connect the button to a real action, make it a submit button, or disable/remove it.",
+      "ruleId": "affordance.actionless-button",
+      "severity": "error"
+    },
+    {
+      "category": "violation",
+      "file": "docs/inventory-ti-architecture.html",
+      "line": 5473,
+      "message": "Enabled literal button has no detectable action or submit behavior.",
+      "remediation": "Connect the button to a real action, make it a submit button, or disable/remove it.",
+      "ruleId": "affordance.actionless-button",
+      "severity": "error"
+    },
+    {
+      "category": "violation",
+      "file": "docs/inventory-ti-architecture.html",
+      "line": 5477,
+      "message": "Enabled literal button has no detectable action or submit behavior.",
+      "remediation": "Connect the button to a real action, make it a submit button, or disable/remove it.",
+      "ruleId": "affordance.actionless-button",
+      "severity": "error"
+    },
+    {
+      "category": "violation",
+      "file": "docs/inventory-ti-architecture.html",
+      "line": 5478,
+      "message": "Enabled literal button has no detectable action or submit behavior.",
+      "remediation": "Connect the button to a real action, make it a submit button, or disable/remove it.",
+      "ruleId": "affordance.actionless-button",
+      "severity": "error"
+    },
+    {
+      "category": "violation",
+      "file": "docs/inventory-ti-architecture.html",
+      "line": 5488,
+      "message": "Enabled literal button has no detectable action or submit behavior.",
+      "remediation": "Connect the button to a real action, make it a submit button, or disable/remove it.",
+      "ruleId": "affordance.actionless-button",
+      "severity": "error"
+    },
+    {
+      "category": "violation",
+      "file": "docs/inventory-ti-architecture.html",
+      "line": 5494,
+      "message": "Enabled literal button has no detectable action or submit behavior.",
+      "remediation": "Connect the button to a real action, make it a submit button, or disable/remove it.",
+      "ruleId": "affordance.actionless-button",
+      "severity": "error"
+    },
+    {
+      "category": "violation",
+      "file": "docs/inventory-ti-architecture.html",
+      "line": 5495,
+      "message": "Enabled literal button has no detectable action or submit behavior.",
+      "remediation": "Connect the button to a real action, make it a submit button, or disable/remove it.",
+      "ruleId": "affordance.actionless-button",
+      "severity": "error"
+    },
+    {
+      "category": "violation",
+      "file": "docs/inventory-ti-architecture.html",
+      "line": 5505,
+      "message": "Enabled literal button has no detectable action or submit behavior.",
+      "remediation": "Connect the button to a real action, make it a submit button, or disable/remove it.",
+      "ruleId": "affordance.actionless-button",
+      "severity": "error"
+    },
+    {
+      "category": "violation",
+      "file": "docs/inventory-ti-architecture.html",
+      "line": 5506,
+      "message": "Enabled literal button has no detectable action or submit behavior.",
+      "remediation": "Connect the button to a real action, make it a submit button, or disable/remove it.",
+      "ruleId": "affordance.actionless-button",
+      "severity": "error"
+    },
+    {
+      "category": "violation",
+      "file": "docs/inventory-ti-architecture.html",
+      "line": 5513,
+      "message": "Enabled literal button has no detectable action or submit behavior.",
+      "remediation": "Connect the button to a real action, make it a submit button, or disable/remove it.",
+      "ruleId": "affordance.actionless-button",
+      "severity": "error"
+    },
+    {
+      "category": "violation",
+      "file": "docs/inventory-ti-architecture.html",
+      "line": 5514,
+      "message": "Enabled literal button has no detectable action or submit behavior.",
+      "remediation": "Connect the button to a real action, make it a submit button, or disable/remove it.",
+      "ruleId": "affordance.actionless-button",
+      "severity": "error"
+    },
+    {
+      "category": "violation",
+      "file": "docs/inventory-ti-architecture.html",
+      "line": 5515,
+      "message": "Enabled literal button has no detectable action or submit behavior.",
+      "remediation": "Connect the button to a real action, make it a submit button, or disable/remove it.",
+      "ruleId": "affordance.actionless-button",
+      "severity": "error"
+    },
+    {
+      "category": "violation",
+      "file": "docs/inventory-ti-architecture.html",
+      "line": 5516,
+      "message": "Enabled literal button has no detectable action or submit behavior.",
+      "remediation": "Connect the button to a real action, make it a submit button, or disable/remove it.",
+      "ruleId": "affordance.actionless-button",
+      "severity": "error"
+    },
+    {
+      "category": "violation",
+      "file": "docs/inventory-ti-architecture.html",
+      "line": 5517,
+      "message": "Enabled literal button has no detectable action or submit behavior.",
+      "remediation": "Connect the button to a real action, make it a submit button, or disable/remove it.",
+      "ruleId": "affordance.actionless-button",
+      "severity": "error"
+    },
+    {
+      "category": "violation",
+      "file": "docs/inventory-ti-architecture.html",
+      "line": 5518,
+      "message": "Enabled literal button has no detectable action or submit behavior.",
+      "remediation": "Connect the button to a real action, make it a submit button, or disable/remove it.",
+      "ruleId": "affordance.actionless-button",
+      "severity": "error"
+    },
+    {
+      "category": "violation",
+      "file": "docs/inventory-ti-architecture.html",
+      "line": 5519,
+      "message": "Enabled literal button has no detectable action or submit behavior.",
+      "remediation": "Connect the button to a real action, make it a submit button, or disable/remove it.",
+      "ruleId": "affordance.actionless-button",
+      "severity": "error"
+    },
+    {
+      "category": "violation",
+      "file": "docs/inventory-ti-architecture.html",
+      "line": 5520,
+      "message": "Enabled literal button has no detectable action or submit behavior.",
+      "remediation": "Connect the button to a real action, make it a submit button, or disable/remove it.",
+      "ruleId": "affordance.actionless-button",
       "severity": "error"
     }
   ],
@@ -131,10 +563,10 @@
   "projectRoot": "/home/javier/inventory-ti",
   "schemaVersion": 1,
   "summary": {
-    "errors": 14,
-    "total": 14,
-    "unresolved": 5,
-    "violations": 9,
+    "errors": 62,
+    "total": 62,
+    "unresolved": 8,
+    "violations": 54,
     "warnings": 0
   }
 }

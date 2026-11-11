@@ -1,12 +1,15 @@
 import { AssetStatus, ProductTrackingMode, Role, type Prisma, type PrismaClient } from '@prisma/client';
 
 import { ApiError } from '../lib/errors.js';
+import { lockProduct } from '../lib/product-lock.js';
 import type { AssetCreateInput, AssetStatusInput, AssetUpdateInput } from './assets-schemas.js';
+import { groupRetirementImportSelect, retirementImportSelect } from './retirement-history.js';
 
-type DatabaseClient = PrismaClient | Prisma.TransactionClient;
 
 export const assetInclude = {
-  product: { select: { id: true, name: true, sku: true, trackingMode: true, isActive: true } }
+  importRetirement: { select: retirementImportSelect },
+  groupRetirement: { select: groupRetirementImportSelect },
+  product: { select: { id: true, name: true, sku: true, trackingMode: true, isActive: true, equipmentType: true, brand: true, model: true } }
 } satisfies Prisma.AssetInclude;
 
 const supportStatuses = new Set<AssetStatus>([
@@ -16,14 +19,8 @@ const supportStatuses = new Set<AssetStatus>([
   AssetStatus.IN_REPAIR
 ]);
 
-function normalized(value: string | null | undefined): string | null | undefined {
-  if (value === undefined || value === null) return value;
-  return value.trim() || null;
-}
-
-async function requireAssetProduct(database: DatabaseClient, productId: string) {
-  const product = await database.product.findUnique({ where: { id: productId } });
-  if (!product) throw new ApiError(404, 'NOT_FOUND', 'Product not found');
+async function requireAssetProduct(database: Prisma.TransactionClient, productId: string) {
+  const product = await lockProduct(database, productId);
   if (!product.isActive) throw new ApiError(409, 'PRODUCT_INACTIVE', 'The product is inactive');
   if (product.trackingMode !== ProductTrackingMode.ASSET) throw new ApiError(409, 'PRODUCT_NOT_ASSET', 'Quantity-tracked products cannot receive assets');
   return product;
@@ -51,38 +48,42 @@ async function audit(database: Prisma.TransactionClient, userId: string, action:
 }
 
 export async function createAsset(database: PrismaClient, input: AssetCreateInput, userId: string) {
-  return database.$transaction(async (transaction) => {
-    await requireAssetProduct(transaction, input.productId);
-    const asset = await transaction.asset.create({
-      data: {
-        productId: input.productId,
-        assetTag: normalized(input.assetTag) ?? null,
-        serialNumber: normalized(input.serialNumber) ?? null,
-        status: AssetStatus.AVAILABLE,
-        isActive: true
-      },
-      include: assetInclude
-    });
-    await audit(transaction, userId, 'ASSET_CREATED', asset.id, { productId: asset.productId });
-    return asset;
+  return database.$transaction((transaction) => createAssetInTransaction(transaction, input, userId));
+}
+
+export async function createAssetInTransaction(transaction: Prisma.TransactionClient, input: AssetCreateInput, userId: string) {
+  await requireAssetProduct(transaction, input.productId);
+  const asset = await transaction.asset.create({
+    data: {
+      ...input,
+      status: AssetStatus.AVAILABLE,
+      isActive: true
+    },
+    include: assetInclude
   });
+  await audit(transaction, userId, 'ASSET_CREATED', asset.id, { productId: asset.productId, values: Object.fromEntries(Object.entries(input).filter(([, value]) => value !== undefined)) });
+  return asset;
 }
 
 export async function updateAsset(database: PrismaClient, assetId: string, input: AssetUpdateInput, userId: string) {
-  return database.$transaction(async (transaction) => {
-    const current = await lockAsset(transaction, assetId);
-    requireOperationalAsset(current);
-    const asset = await transaction.asset.update({
-      where: { id: assetId },
-      data: {
-        ...(input.assetTag !== undefined ? { assetTag: normalized(input.assetTag) } : {}),
-        ...(input.serialNumber !== undefined ? { serialNumber: normalized(input.serialNumber) } : {})
-      },
-      include: assetInclude
-    });
-    await audit(transaction, userId, 'ASSET_UPDATED', asset.id, { fields: Object.keys(input) });
-    return asset;
+  return database.$transaction((transaction) => updateAssetInTransaction(transaction, assetId, input, userId));
+}
+
+export async function updateAssetInTransaction(transaction: Prisma.TransactionClient, assetId: string, input: AssetUpdateInput, userId: string) {
+  const current = await lockAsset(transaction, assetId);
+  requireOperationalAsset(current);
+  const asset = await transaction.asset.update({
+    where: { id: assetId },
+    data: input,
+    include: assetInclude
   });
+  const fields = Object.keys(input).filter((key) => input[key as keyof AssetUpdateInput] !== undefined) as Array<keyof AssetUpdateInput>;
+  await audit(transaction, userId, 'ASSET_UPDATED', asset.id, {
+    fields,
+    before: Object.fromEntries(fields.map((field) => [field, current[field]])),
+    after: Object.fromEntries(fields.map((field) => [field, asset[field]]))
+  });
+  return asset;
 }
 
 export async function changeAssetStatus(database: PrismaClient, assetId: string, input: AssetStatusInput, role: Role, userId: string) {

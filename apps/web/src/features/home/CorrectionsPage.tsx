@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { ApiRequestError, apiRequest, getApiErrorMessage, getApiFieldErrors } from '../../lib/api';
-import { Alert, Button, DataTable, Dialog, EmptyState, Field, Icon, OverflowText, PageContainer, PageHeader, PageToolbar, Select, Switch, useToast, useRequestError, type DataTableColumn } from '../../ui';
+import { inventoryDateRange } from '../../lib/date-range';
+import { mergeRecords } from '../../lib/pagination';
+import { Alert, Button, DataTable, Dialog, EmptyState, Field, Icon, ModuleFilters, ModuleHeader, OverflowText, PageContainer, Select, Switch, useToast, useRequestError, type DataTableColumn } from '../../ui';
 import { useAuth } from '../auth/auth-context';
-import { DatePicker } from './HomePage';
+import { DatePicker } from '../../ui/primitives/DatePicker';
 import { getCorrectedQuantity, getCorrectionFeedback } from './correction-model';
 
 type Status = 'PENDING' | 'APPROVED' | 'REJECTED';
@@ -37,13 +39,17 @@ export function CorrectionsPage() {
   const [movementsLoading, setMovementsLoading] = useState(true);
   const [movementsError, setMovementsError] = useState<string | null>(null);
   const pageRequestId = useRef(0);
+  const nextOffset = useRef(0);
+  const pageLoading = useRef(false);
   useEffect(() => {
     if (!createOpen) return;
     setDialogError(null);
     setFormErrors({});
   }, [createOpen]);
   const loadPage = useCallback(async (offset = 0, append = false, signal?: globalThis.AbortSignal) => {
+    if (append && pageLoading.current) return;
     const requestId = ++pageRequestId.current;
+    pageLoading.current = true;
     if (append) setLoadingMore(true); else setLoading(true);
     setError(null);
     try {
@@ -51,18 +57,23 @@ export function CorrectionsPage() {
       if (status) query.set('status', status);
       if (type) query.set('movementType', type);
       if (search.trim()) query.set('search', search.trim());
-      if (from) query.set('from', from + 'T00:00:00');
-      if (to) query.set('to', to + 'T23:59:59');
+      const range = inventoryDateRange(from, to);
+      if (range.from) query.set('from', range.from);
+      if (range.to) query.set('to', range.to);
       const result = await request<{ corrections: Correction[]; total: number; pendingTotal: number; hasMore: boolean }>('/corrections?' + query.toString(), { signal });
       if (signal?.aborted || requestId !== pageRequestId.current) return;
-      setItems((current) => append ? [...current, ...result.corrections] : result.corrections);
+      nextOffset.current = offset + result.corrections.length;
+      setItems((current) => append ? mergeRecords(current, result.corrections) : result.corrections);
       setHasMore(result.hasMore);
       if (!append) setSelected((old) => old ? result.corrections.find((x) => x.id === old.id) ?? null : null);
     } catch (e) { if (!signal?.aborted && requestId === pageRequestId.current) setError(getApiErrorMessage(e, 'No se pudieron cargar las correcciones.')); }
-    finally { if (!signal?.aborted && requestId === pageRequestId.current) { setLoadingMore(false); setLoading(false); } }
+    finally { if (!signal?.aborted && requestId === pageRequestId.current) { pageLoading.current = false; setLoadingMore(false); setLoading(false); } }
   }, [from, search, status, to, type]);
   useEffect(() => {
     pageRequestId.current++;
+    pageLoading.current = false;
+    nextOffset.current = 0;
+    setLoading(true);
     const controller = new globalThis.AbortController();
     const timer = globalThis.setTimeout(() => { void loadPage(0, false, controller.signal); }, 300);
     return () => { globalThis.clearTimeout(timer); controller.abort(); };
@@ -98,7 +109,7 @@ export function CorrectionsPage() {
   useEffect(() => {
     const onScroll = () => {
       if (error || loading || !hasMore || loadingMore || globalThis.innerHeight + globalThis.scrollY < document.documentElement.scrollHeight - 500) return;
-      void loadPage(items.length, true);
+      void loadPage(nextOffset.current, true);
     };
     globalThis.addEventListener('scroll', onScroll, { passive: true });
     return () => globalThis.removeEventListener('scroll', onScroll);
@@ -122,7 +133,7 @@ export function CorrectionsPage() {
     void loadMovements(controller.signal);
     return () => controller.abort();
   }, [createOpen, loadMovements]);
-  const filtered = useMemo(() => { const q = search.trim().toLocaleLowerCase('es-CL'); const start = from ? new Date(from + 'T00:00:00') : null; const end = to ? new Date(to + 'T23:59:59') : null; return items.filter((x) => { const m = x.originalMovement; const text = (m.product.name + ' ' + (m.product.sku ?? '') + ' ' + x.requestedBy.displayName + ' ' + x.reason).toLocaleLowerCase('es-CL'); const d = new Date(m.effectiveAt); return (!status || x.status === status) && (!type || m.movementType === type) && (!q || text.includes(q)) && (!start || d >= start) && (!end || d <= end); }); }, [from, items, search, status, to, type]);
+  const filtered = useMemo(() => { const q = search.trim().toLocaleLowerCase('es-CL'); const range = inventoryDateRange(from, to); const start = range.from ? new Date(range.from) : null; const end = range.to ? new Date(range.to) : null; return items.filter((x) => { const m = x.originalMovement; const text = (m.product.name + ' ' + (m.product.sku ?? '') + ' ' + x.requestedBy.displayName + ' ' + x.reason).toLocaleLowerCase('es-CL'); const d = new Date(m.effectiveAt); return (!status || x.status === status) && (!type || m.movementType === type) && (!q || text.includes(q)) && (!start || d >= start) && (!end || d <= end); }); }, [from, items, search, status, to, type]);
   const available = useMemo(() => movements.filter((movement) => movement.canCorrect), [movements]);
   const chosenMovement = available.find((movement) => movement.id === form.movementId);
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -151,8 +162,18 @@ export function CorrectionsPage() {
       return () => globalThis.cancelAnimationFrame(frame);
     }
     setFilterDrawerHeight(0);
-    const frame = globalThis.requestAnimationFrame(() => setFilterDrawerHeight(drawer.scrollHeight));
-    return () => globalThis.cancelAnimationFrame(frame);
+    const content = drawer.firstElementChild;
+    if (!(content instanceof globalThis.HTMLElement)) return;
+    const measure = () => setFilterDrawerHeight(Math.ceil(content.getBoundingClientRect().height));
+    const observer = new globalThis.ResizeObserver(measure);
+    const frame = globalThis.requestAnimationFrame(() => {
+      measure();
+      observer.observe(content);
+    });
+    return () => {
+      globalThis.cancelAnimationFrame(frame);
+      observer.disconnect();
+    };
   }, [filtersMounted, filtersOpen]);
   async function create(event: FormEvent) {
     event.preventDefault();
@@ -207,14 +228,14 @@ export function CorrectionsPage() {
     { key: 'movement', mobileRole: 'full', header: <TableHeader icon={<MovementIcon type="ENTRY" />}>Movimiento</TableHeader>, mobileLabel: 'Movimiento', className: 'corrections-col-movement', render: (x: Correction) => <MovementCell movement={x.originalMovement} /> },
     { key: 'product', mobileRole: 'identity', header: <TableHeader icon={<ProductIcon />}>Producto</TableHeader>, mobileLabel: 'Producto', className: 'corrections-col-product', render: (x: Correction) => <ProductCell product={x.originalMovement.product} /> },
     { key: 'original', mobileRole: 'context', header: <TableHeader icon={<NumberHeaderIcon />}>Antes</TableHeader>, mobileLabel: 'Antes', className: 'corrections-col-original', render: (x: Correction) => <NumberCell label="Vigente al solicitar" value={x.previousQuantity} /> },
-    { key: 'delta', mobileRole: 'full', header: <TableHeader icon={<NumberHeaderIcon />}><span className="sr-only">Cantidad final</span><span className="corrections-header-compact" aria-hidden="true">Final</span></TableHeader>, mobileLabel: 'Cantidad final', className: 'corrections-col-delta', render: (x: Correction) => <div className="corrections-adjustment-overview"><NumberCell label={x.status === 'APPROVED' ? 'Aplicada' : x.status === 'REJECTED' ? 'No aplicada' : 'Propuesta'} value={x.correctedQuantity} emphasis /><div className="corrections-adjustment-context"><span><small>Antes</small><strong>{signed(x.previousQuantity)}</strong></span><span><small>Diferencia</small><strong>{signed(x.delta)}</strong></span></div></div> },
+    { key: 'delta', mobileRole: 'full', header: <TableHeader icon={<NumberHeaderIcon />}><span className="sr-only">Cantidad final</span><span className="corrections-header-compact" aria-hidden="true">Final</span></TableHeader>, mobileLabel: 'Cantidad final', className: 'corrections-col-delta', render: (x: Correction) => <div className="corrections-adjustment-overview"><NumberCell label={x.status === 'APPROVED' ? 'Aplicada' : x.status === 'REJECTED' ? 'No aplicada' : 'Propuesta'} value={x.correctedQuantity} emphasis /><div className="corrections-adjustment-context"><span><small>Antes</small><strong>{signed(x.previousQuantity)}</strong></span><span><small>Diferencia</small><strong className={'corrections-number ' + (x.delta > 0 ? 'is-positive' : x.delta < 0 ? 'is-negative' : '')}>{signed(x.delta)}</strong></span></div></div> },
     { key: 'result', mobileRole: 'context', header: <TableHeader icon={<NumberHeaderIcon />}>Stock</TableHeader>, mobileLabel: 'Diferencia de stock', className: 'corrections-col-result', render: (x: Correction) => <NumberCell label={x.status === 'APPROVED' ? 'Diferencia aplicada' : 'Diferencia propuesta'} value={x.delta} /> },
     { key: 'requester', mobileRole: 'full', header: <TableHeader icon={<PersonIcon />}>Solicitante</TableHeader>, mobileLabel: 'Solicitante', className: 'corrections-col-requester', render: (x: Correction) => <RequesterCell user={x.requestedBy} /> },
     { key: 'status', header: <TableHeader icon={<StatusIcon status="PENDING" />}>Estado</TableHeader>, mobileLabel: 'Estado', className: 'corrections-col-status', render: (x: Correction) => <StatusChip status={x.status} /> },
     { key: 'date', mobileRole: 'full', header: <TableHeader icon={<CalendarIcon />}>Fecha</TableHeader>, mobileLabel: 'Fecha', className: 'corrections-col-date', render: (x: Correction) => <time className="corrections-date-cell"><CalendarIcon />{date(x.createdAt)}</time> },
     { key: 'action', mobileRole: 'actions', header: <TableHeader icon={<EyeIcon />}>Acción</TableHeader>, mobileLabel: 'Acción', className: 'corrections-col-action', render: (x: Correction) => <Button className="corrections-row-action" size="sm" variant="primary" onClick={() => { setSelected(x); setDetailOpen(true); }}><EyeIcon />{reviewer && x.status === 'PENDING' ? 'Revisar' : 'Ver'}</Button> }
   ];
-  return <PageContainer fluid className="corrections-page"><PageHeader title="Correcciones" description="Gestiona y revisa solicitudes para corregir movimientos de inventario." meta={<div className="catalog-page-stats corrections-page-stats" aria-label="Resumen de correcciones"><span className="catalog-page-stat-primary"><small>Solicitudes visibles</small><strong>{filtered.length}</strong></span><span className="catalog-page-stat-accent"><small>Pendientes</small><strong>{filtered.filter((x) => x.status === 'PENDING').length}</strong></span></div>} action={<Button onClick={() => { setDialogError(null); setCreateOpen(true); }}><PlusIcon /> Nueva corrección</Button>} />{error && <Alert variant="danger" action={<Button variant="secondary" size="sm" onClick={() => void loadPage()}>Reintentar</Button>}>{error}</Alert>}<PageToolbar className="corrections-toolbar" actions={<Button variant="secondary" size="sm" className="corrections-clear-filters" onClick={() => { setSearch(''); setStatus(''); setType(''); setFrom(''); setTo(''); }}><ResetIcon /> Limpiar filtros</Button>}><label className="corrections-search"><span className="sr-only">Buscar</span><SearchIcon /><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar producto, SKU o solicitante" aria-label="Buscar correcciones" /></label><Button variant="secondary" size="sm" className="corrections-filter-toggle" aria-expanded={filtersOpen} onClick={toggleFilters}><FilterIcon /> Filtros{activeFilterCount > 0 && <span className="corrections-filter-count">{activeFilterCount}</span>}<ChevronIcon open={filtersOpen} /></Button></PageToolbar>{filtersMounted && <div ref={filterDrawerRef} className="corrections-filter-drawer" data-state={filtersOpen ? 'open' : 'closing'} style={{ height: `${filterDrawerHeight}px` }}><div className="corrections-filter-drawer-content"><div className="corrections-filter-grid"><Select className="corrections-filter-select" value={status} onChange={setStatus} placeholder="Todos los estados" options={[{ value: '', label: 'Todos los estados' }, ...Object.entries(statusLabels).map(([value, label]) => ({ value, label }))]} /><Select className="corrections-filter-select" value={type} onChange={setType} placeholder="Todos los movimientos" options={[{ value: '', label: 'Todos los movimientos' }, ...Object.entries(movementLabels).map(([value, label]) => ({ value, label }))]} /><DateFilter label="Desde" value={from} onChange={setFrom} /><DateFilter label="Hasta" value={to} onChange={setTo} /></div></div></div>}<section className="corrections-panel"><div className="corrections-panel-heading"><div><span>Solicitudes</span><h2>Historial de correcciones</h2></div><strong>{filtered.length} visibles</strong></div><DataTable className="corrections-data-table" rows={filtered} columns={columns} getRowKey={(x) => x.id} getRowClassName={(x) => x.delta >= 0 ? 'corrections-row-increase' : 'corrections-row-decrease'} caption="Solicitudes de corrección" loading={loading} error={filtered.length === 0 ? error ?? undefined : undefined} empty={<EmptyState title="No hay correcciones" description="Prueba con otros filtros o crea una nueva solicitud." icon={<ClipboardIcon />} />} /></section><CreateDialog formErrors={formErrors} loading={movementsLoading} loadError={movementsError} applyDirectly={Boolean(reviewer)} onRetry={() => void loadMovements()} error={dialogError} open={createOpen} busy={busy} form={form} movements={available} chosen={chosenMovement} onClose={() => setCreateOpen(false)} onChange={(next) => { setDialogError(null); setFormErrors({}); setForm(next); }} onSubmit={create} /><DetailDialog open={detailOpen} correction={selected} canReview={Boolean(reviewer && selected?.status === 'PENDING' && selected.requestedBy.id !== user?.id)} selfRequested={Boolean(reviewer && selected?.status === 'PENDING' && selected.requestedBy.id === user?.id)} onClose={() => setDetailOpen(false)} onApprove={() => { setDialogError(null); setConfirm('approve'); }} onReject={() => { setDialogError(null); setConfirm('reject'); }} /><ConfirmReview error={dialogError} open={Boolean(confirm)} action={confirm} correction={selected} busy={busy} onClose={() => setConfirm(null)} onConfirm={() => void review()} /></PageContainer>;
+  return <PageContainer fluid className="corrections-page"><ModuleHeader className="corrections-module-header" title="Correcciones" description="Gestiona y revisa solicitudes para corregir movimientos de inventario." action={<Button onClick={() => { setDialogError(null); setCreateOpen(true); }}><PlusIcon /> Nueva corrección</Button>} />{error && <Alert variant="danger" action={<Button variant="secondary" size="sm" onClick={() => void loadPage()}>Reintentar</Button>}>{error}</Alert>}<ModuleFilters className="corrections-toolbar" ariaLabel="Filtros de correcciones" actions={<Button variant="secondary" size="sm" className="corrections-clear-filters" onClick={() => { setSearch(''); setStatus(''); setType(''); setFrom(''); setTo(''); }}><ResetIcon /> Limpiar filtros</Button>}><div className="corrections-search"><label className="sr-only" htmlFor="corrections-search-input">Buscar</label><SearchIcon /><input id="corrections-search-input" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar producto, SKU o solicitante" aria-label="Buscar correcciones" /></div><Button variant="secondary" size="sm" className="corrections-filter-toggle" aria-expanded={filtersOpen} onClick={toggleFilters}><FilterIcon /> Filtros{activeFilterCount > 0 && <span className="corrections-filter-count">{activeFilterCount}</span>}<ChevronIcon open={filtersOpen} /></Button></ModuleFilters>{filtersMounted && <div ref={filterDrawerRef} className="corrections-filter-drawer" data-state={filtersOpen ? 'open' : 'closing'} style={{ height: `${filterDrawerHeight}px` }}><div className="corrections-filter-drawer-content"><div className="corrections-filter-grid"><Select className="corrections-filter-select" value={status} onChange={setStatus} placeholder="Todos los estados" options={[{ value: '', label: 'Todos los estados' }, ...Object.entries(statusLabels).map(([value, label]) => ({ value, label }))]} /><Select className="corrections-filter-select" value={type} onChange={setType} placeholder="Todos los movimientos" options={[{ value: '', label: 'Todos los movimientos' }, ...Object.entries(movementLabels).map(([value, label]) => ({ value, label }))]} /><DateFilter label="Desde" value={from} onChange={setFrom} /><DateFilter label="Hasta" value={to} onChange={setTo} /></div></div></div>}<section className="corrections-panel"><div className="corrections-panel-heading"><div><span>Solicitudes</span><h2>Historial de correcciones</h2></div><strong>{filtered.length} visibles</strong></div><DataTable className="corrections-data-table" rows={filtered} columns={columns} getRowKey={(x) => x.id} getRowClassName={(x) => x.delta >= 0 ? 'corrections-row-increase' : 'corrections-row-decrease'} caption="Solicitudes de corrección" loading={loading} error={filtered.length === 0 ? error ?? undefined : undefined} empty={<EmptyState title="No hay correcciones" description="Prueba con otros filtros o crea una nueva solicitud." icon={<ClipboardIcon />} />} /></section><CreateDialog formErrors={formErrors} loading={movementsLoading} loadError={movementsError} applyDirectly={Boolean(reviewer)} onRetry={() => void loadMovements()} error={dialogError} open={createOpen} busy={busy} form={form} movements={available} chosen={chosenMovement} onClose={() => setCreateOpen(false)} onChange={(next) => { setDialogError(null); setFormErrors({}); setForm(next); }} onSubmit={create} /><DetailDialog open={detailOpen} correction={selected} canReview={Boolean(reviewer && selected?.status === 'PENDING' && selected.requestedBy.id !== user?.id)} selfRequested={Boolean(reviewer && selected?.status === 'PENDING' && selected.requestedBy.id === user?.id)} onClose={() => setDetailOpen(false)} onApprove={() => { setDialogError(null); setConfirm('approve'); }} onReject={() => { setDialogError(null); setConfirm('reject'); }} /><ConfirmReview error={dialogError} open={Boolean(confirm)} action={confirm} correction={selected} busy={busy} onClose={() => setConfirm(null)} onConfirm={() => void review()} /></PageContainer>;
 }
 function MovementCell({ movement }: { movement: MovementDetails }) { return <div className="corrections-movement-cell"><span className={`corrections-movement-icon corrections-movement-${movement.movementType.toLowerCase()}`}><MovementIcon type={movement.movementType} /></span><div className="corrections-primary-cell"><OverflowText as="strong" text={movementLabels[movement.movementType]} /><span>{dateTime(movement.effectiveAt)}</span></div></div>; }
 function TableHeader({ icon, children }: { icon: ReactNode; children: ReactNode }) { return <span className="corrections-header-label">{icon}{children}</span>; }

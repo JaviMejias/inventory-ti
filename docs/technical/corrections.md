@@ -40,11 +40,13 @@ Example: correcting an EXIT from -3 to -2 applies +1 once. Current stock 4 becom
 
 Migration `0011_correction_final_quantity` backfills final quantities from immutable movement effects and recorded deltas, adds a required `correctedQuantity`, and enforces one pending request with a partial unique index. It does not change existing stock or movements.
 
-After backing up and reviewing pending migrations, run `pnpm db:migrate` and restart the API. This command also deploys any earlier pending migrations: in particular, `0010_remove_locations` drops location distinctions, so review its backup warning first. Integration tests must use a separate disposable PostgreSQL database, not the user's inventory.
+Follow the [deployment and migration preflight](../deployment/database.md#preflight-for-an-existing-database) with a verified backup and stopped writers, run `pnpm db:migrate`, then restart and check migration status/authenticated reads. This applies **all** pending migrations, including destructive `0010_remove_locations` and `0012_backend_integrity` SKU/tracking guards. Tests use the [isolated database launcher](testing.md#database-isolation), never the user's inventory.
 
 The frontend sends signed final quantities, displays persisted before/after values, distinguishes direct JEFE application from pending review, permits subsequent requests for processed originals, and consumes corrected running history. Spanish recovery messages cover correction validation, stale requests and stock overflow. Movement reads also return `originalQuantity`, `effectiveQuantity`, `canCorrect` and `compensatingCorrectionId`, allowing eligibility to remain independent of correction-list pagination, filters and requester visibility. Legacy delta clients remain compatible; normal movement reads retain their immutable `quantity` as the audit view.
 
 ## Frontend verification (2026-09-28)
+
+This is a **historical verification snapshot**, not current deployment/runtime/test status. The migration-state statement at the end refers only to that inspection date; use `migrate status` for the database being deployed today.
 
 Verification used isolated API/web servers and a disposable, fully migrated database. No production inventory records or local development migration state were changed.
 

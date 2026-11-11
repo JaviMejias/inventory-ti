@@ -2,8 +2,9 @@ import { randomUUID } from 'node:crypto';
 import { MovementType, type Prisma, type PrismaClient } from '@prisma/client';
 
 import { ApiError } from '../lib/errors.js';
+import { lockProduct } from '../lib/product-lock.js';
+import { maximumQuantity } from '../lib/quantity.js';
 
-type DatabaseClient = PrismaClient | Prisma.TransactionClient;
 type MovementInput = { productId: string; quantity: number; reason?: string | null; reference?: string | null; effectiveAt?: Date };
 type MovementResponseInput = { id: string; productId: string; performedById: string | null; movementType: MovementType; quantity: number; reason: string | null; reference: string | null; effectiveAt: Date; createdAt: Date; product?: unknown; performedBy?: unknown };
 
@@ -42,9 +43,8 @@ export function stockResponse(stock: { id: string; productId: string; quantity: 
   return { id: stock.id, productId: stock.productId, quantity: stock.quantity, product: stock.product, updatedAt: stock.updatedAt };
 }
 
-async function getActiveProduct(database: DatabaseClient, productId: string) {
-  const product = await database.product.findUnique({ where: { id: productId } });
-  if (!product) throw new ApiError(404, 'NOT_FOUND', 'Product not found');
+async function getActiveProduct(database: Prisma.TransactionClient, productId: string) {
+  const product = await lockProduct(database, productId);
   if (!product.isActive) throw new ApiError(409, 'PRODUCT_INACTIVE', 'The product is inactive');
   if (product.trackingMode !== 'QUANTITY') throw new ApiError(409, 'ASSET_PRODUCT_UNSUPPORTED', 'Asset-tracked products are not supported by quantity inventory');
   return product;
@@ -84,6 +84,7 @@ async function applyDelta(database: Prisma.TransactionClient, productId: string,
   const stock = await lockStock(database, productId);
   const nextQuantity = stock.quantity + delta;
   if (nextQuantity < 0) throw new ApiError(409, 'INSUFFICIENT_STOCK', `Insufficient stock. Available: ${stock.quantity}; requested: ${Math.abs(delta)}`);
+  if (nextQuantity > maximumQuantity) throw new ApiError(409, 'STOCK_LIMIT_EXCEEDED', 'The stock exceeds the supported range');
   await database.inventoryStock.update({ where: { id: stock.id }, data: { quantity: nextQuantity } });
   return nextQuantity;
 }
@@ -92,7 +93,7 @@ export async function createCompensatingAdjustment(database: Prisma.TransactionC
   const stock = await lockStock(database, input.productId);
   const nextQuantity = stock.quantity + input.delta;
   if (nextQuantity < 0) throw new ApiError(409, 'INSUFFICIENT_STOCK', `Insufficient stock. Available: ${stock.quantity}; requested: ${Math.abs(input.delta)}`);
-  if (nextQuantity > 2_147_483_647) throw new ApiError(409, 'STOCK_LIMIT_EXCEEDED', 'The corrected stock exceeds the supported range');
+  if (nextQuantity > maximumQuantity) throw new ApiError(409, 'STOCK_LIMIT_EXCEEDED', 'The corrected stock exceeds the supported range');
   const movement = await createMovement(database, {
     productId: input.productId,
     movementType: MovementType.ADJUSTMENT,
@@ -120,7 +121,9 @@ export async function createInitialMovement(database: PrismaClient, input: Movem
     const stock = await lockStock(transaction, input.productId);
     const initial = await transaction.inventoryMovement.findFirst({ where: { productId: input.productId, movementType: MovementType.INITIAL } });
     if (initial) throw new ApiError(409, 'INITIAL_ALREADY_EXISTS', 'Initial stock already exists for this product');
-    await transaction.inventoryStock.update({ where: { id: stock.id }, data: { quantity: stock.quantity + input.quantity } });
+    const nextQuantity = stock.quantity + input.quantity;
+    if (nextQuantity > maximumQuantity) throw new ApiError(409, 'STOCK_LIMIT_EXCEEDED', 'The stock exceeds the supported range');
+    await transaction.inventoryStock.update({ where: { id: stock.id }, data: { quantity: nextQuantity } });
     return createMovement(transaction, { ...input, movementType: MovementType.INITIAL, performedById });
   });
 }

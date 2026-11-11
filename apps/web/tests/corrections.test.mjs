@@ -1,3 +1,5 @@
+import { Buffer } from 'node:buffer';
+import { URL } from 'node:url';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';

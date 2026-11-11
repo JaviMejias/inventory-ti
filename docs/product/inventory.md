@@ -123,7 +123,7 @@ update materialized current stock
         ↓
 commit
         ↓
-publish realtime event
+return HTTP response (realtime publishing is planned)
 ```
 
 - Movement creation and materialized stock update are **atomic** (see [workflows.md](workflows.md) and [technical/database.md](../technical/database.md)).
@@ -159,7 +159,7 @@ See [assets.md](assets.md) for details.
 current stock <= low stock threshold
 ```
 
-- Low stock is surfaced on the dashboard and in reporting/notifications where appropriate.
+- Low-stock visibility is derived from stock and product thresholds through REST reads. Report exports and backend notification persistence/delivery remain planned.
 - The threshold is configured at product level.
 
 ## 8. Corrections (summary)

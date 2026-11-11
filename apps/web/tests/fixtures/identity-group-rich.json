@@ -1,0 +1,1208 @@
+{
+  "original": {
+    "mode": "PREVIEW",
+    "canApply": false,
+    "persisted": false,
+    "comparisonMode": "SOURCE_ONLY",
+    "source": {
+      "fileName": "Agrupacion-sintetica-QA.xlsx",
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    "rulesVersion": "mda-preview-1",
+    "asOf": "2026-10-25",
+    "timeZone": "America/Santiago",
+    "payloadDigest": "935460ec6653e1c0ad5fcb52e39ab6feddaffe7e1d476e27ab369dfcf5c09e73",
+    "databaseSnapshotDigest": null,
+    "previewId": "0c2a2059dff8cf5d9d6c1bf8057eee0f883444ecee8f3ed3a7dd6733634a6763",
+    "summary": {
+      "sheetCount": 1,
+      "populatedRows": 3,
+      "recordCount": 2,
+      "excludedCount": 1,
+      "candidateCount": 1,
+      "matchedCandidateCount": 0,
+      "consumableReviewCount": 0,
+      "manualSummaryCount": 0,
+      "sourceNoteCount": 0,
+      "blockingIssueCount": 0,
+      "warningCount": 16,
+      "infoCount": 1
+    },
+    "sheets": [
+      {
+        "name": "Recepción",
+        "kind": "ASSET_OBSERVATION",
+        "headerValid": true,
+        "populatedRows": 3,
+        "recordCount": 2,
+        "excludedCount": 1,
+        "filterRange": null
+      }
+    ],
+    "records": [
+      {
+        "id": "09213ede180a9ea8dc9b3b592d8582ad8fe2bb078f40e5a649e7b018c1aaa766",
+        "sheet": "Recepción",
+        "row": 4,
+        "kind": "ASSET_OBSERVATION",
+        "fields": {
+          "receivedDate": null,
+          "incomingOt": null,
+          "equipmentType": "Notebook",
+          "brand": "Marca QA",
+          "model": "Modelo QA",
+          "serialNumber": "REPETIDA",
+          "assetTag": null,
+          "incomingTicket": null,
+          "location": null,
+          "technicalCondition": null,
+          "availability": null,
+          "notes": null,
+          "usedDate": null,
+          "outgoingTicket": null,
+          "outgoingOt": null,
+          "details": null
+        },
+        "originalCells": {
+          "C": {
+            "type": "text",
+            "value": "Notebook"
+          },
+          "D": {
+            "type": "text",
+            "value": "Marca QA"
+          },
+          "E": {
+            "type": "text",
+            "value": "Modelo QA"
+          },
+          "F": {
+            "type": "text",
+            "value": "REPETIDA"
+          }
+        },
+        "serialKey": "REPETIDA",
+        "tagKey": null,
+        "statusEvidence": null
+      },
+      {
+        "id": "893702b93d0c1f6d5396bb49b08658668a8369c15d90672df85e76adc572e0df",
+        "sheet": "Recepción",
+        "row": 5,
+        "kind": "ASSET_OBSERVATION",
+        "fields": {
+          "receivedDate": null,
+          "incomingOt": null,
+          "equipmentType": "Notebook",
+          "brand": "Marca QA",
+          "model": "Modelo QA",
+          "serialNumber": "REPETIDA",
+          "assetTag": null,
+          "incomingTicket": null,
+          "location": null,
+          "technicalCondition": null,
+          "availability": null,
+          "notes": null,
+          "usedDate": null,
+          "outgoingTicket": null,
+          "outgoingOt": null,
+          "details": null
+        },
+        "originalCells": {
+          "C": {
+            "type": "text",
+            "value": "Notebook"
+          },
+          "D": {
+            "type": "text",
+            "value": "Marca QA"
+          },
+          "E": {
+            "type": "text",
+            "value": "Modelo QA"
+          },
+          "F": {
+            "type": "text",
+            "value": "REPETIDA"
+          }
+        },
+        "serialKey": "REPETIDA",
+        "tagKey": null,
+        "statusEvidence": null
+      }
+    ],
+    "candidates": [
+      {
+        "id": "7889f0b95c5848f5d435b4461834e6d1e46bdf82850a848fd0cfcfb6f9041830",
+        "identityKey": "SERIAL:REPETIDA",
+        "serials": [
+          "REPETIDA"
+        ],
+        "tags": [],
+        "recordIds": [
+          "09213ede180a9ea8dc9b3b592d8582ad8fe2bb078f40e5a649e7b018c1aaa766",
+          "893702b93d0c1f6d5396bb49b08658668a8369c15d90672df85e76adc572e0df"
+        ],
+        "reviewRequired": true,
+        "proposal": "REVIEW_SOURCE_ONLY",
+        "existingAssets": [],
+        "proposedStatus": null
+      }
+    ],
+    "issues": [
+      {
+        "code": "MISSING_SHEET",
+        "severity": "WARNING",
+        "sheet": "Baja 2026",
+        "row": null,
+        "cell": null,
+        "candidateId": null
+      },
+      {
+        "code": "MISSING_SHEET",
+        "severity": "WARNING",
+        "sheet": "Baja 2025",
+        "row": null,
+        "cell": null,
+        "candidateId": null
+      },
+      {
+        "code": "MISSING_SHEET",
+        "severity": "WARNING",
+        "sheet": "NB Prestamo",
+        "row": null,
+        "cell": null,
+        "candidateId": null
+      },
+      {
+        "code": "MISSING_SHEET",
+        "severity": "WARNING",
+        "sheet": "FORTIGATE",
+        "row": null,
+        "cell": null,
+        "candidateId": null
+      },
+      {
+        "code": "MISSING_SHEET",
+        "severity": "WARNING",
+        "sheet": "Control Desvinculados",
+        "row": null,
+        "cell": null,
+        "candidateId": null
+      },
+      {
+        "code": "MISSING_SHEET",
+        "severity": "WARNING",
+        "sheet": "Baja 2024",
+        "row": null,
+        "cell": null,
+        "candidateId": null
+      },
+      {
+        "code": "MISSING_SHEET",
+        "severity": "WARNING",
+        "sheet": "Bodega 2",
+        "row": null,
+        "cell": null,
+        "candidateId": null
+      },
+      {
+        "code": "MISSING_SHEET",
+        "severity": "WARNING",
+        "sheet": "Bodega 1",
+        "row": null,
+        "cell": null,
+        "candidateId": null
+      },
+      {
+        "code": "MISSING_SHEET",
+        "severity": "WARNING",
+        "sheet": "Tintas",
+        "row": null,
+        "cell": null,
+        "candidateId": null
+      },
+      {
+        "code": "MISSING_SHEET",
+        "severity": "WARNING",
+        "sheet": "Desvinculados",
+        "row": null,
+        "cell": null,
+        "candidateId": null
+      },
+      {
+        "code": "MISSING_SHEET",
+        "severity": "WARNING",
+        "sheet": "Caja Negra",
+        "row": null,
+        "cell": null,
+        "candidateId": null
+      },
+      {
+        "code": "MISSING_SHEET",
+        "severity": "WARNING",
+        "sheet": "KIT CONTINGENCIA",
+        "row": null,
+        "cell": null,
+        "candidateId": null
+      },
+      {
+        "code": "MISSING_SHEET",
+        "severity": "WARNING",
+        "sheet": "CE",
+        "row": null,
+        "cell": null,
+        "candidateId": null
+      },
+      {
+        "code": "MISSING_SHEET",
+        "severity": "WARNING",
+        "sheet": "Transitorio",
+        "row": null,
+        "cell": null,
+        "candidateId": null
+      },
+      {
+        "code": "MISSING_SHEET",
+        "severity": "WARNING",
+        "sheet": "Disponible",
+        "row": null,
+        "cell": null,
+        "candidateId": null
+      },
+      {
+        "code": "MISSING_SHEET",
+        "severity": "WARNING",
+        "sheet": "Inventario MDA 2",
+        "row": null,
+        "cell": null,
+        "candidateId": null
+      },
+      {
+        "code": "MULTIPLE_SOURCE_OBSERVATIONS",
+        "severity": "INFO",
+        "sheet": null,
+        "row": null,
+        "cell": null,
+        "candidateId": "7889f0b95c5848f5d435b4461834e6d1e46bdf82850a848fd0cfcfb6f9041830"
+      }
+    ],
+    "excluded": [
+      {
+        "sheet": "Recepción",
+        "row": 3,
+        "reason": "HEADER_OR_TITLE",
+        "originalCells": {
+          "A": {
+            "type": "text",
+            "value": "Fecha"
+          },
+          "B": {
+            "type": "text",
+            "value": "OT Recepción"
+          },
+          "C": {
+            "type": "text",
+            "value": "Equipo"
+          },
+          "D": {
+            "type": "text",
+            "value": "Marca"
+          },
+          "E": {
+            "type": "text",
+            "value": "Modelo"
+          },
+          "F": {
+            "type": "text",
+            "value": "Serie"
+          },
+          "G": {
+            "type": "text",
+            "value": "Activo"
+          },
+          "H": {
+            "type": "text",
+            "value": "Ticket MDA"
+          },
+          "I": {
+            "type": "text",
+            "value": "Ubicación"
+          },
+          "J": {
+            "type": "text",
+            "value": "Estado"
+          },
+          "K": {
+            "type": "text",
+            "value": "Descripción"
+          },
+          "L": {
+            "type": "text",
+            "value": "Observación"
+          },
+          "M": {
+            "type": "text",
+            "value": "Fecha Utilizado"
+          },
+          "N": {
+            "type": "text",
+            "value": "Ticket MDA"
+          },
+          "O": {
+            "type": "text",
+            "value": "OT"
+          },
+          "P": {
+            "type": "text",
+            "value": "Detalles"
+          }
+        }
+      }
+    ]
+  },
+  "input": {
+    "expectedVersion": 1,
+    "expectedSourceRevision": 0,
+    "confirmation": "REVIEW_PHYSICAL_IDENTITY_GROUPS",
+    "candidateIds": [
+      "7889f0b95c5848f5d435b4461834e6d1e46bdf82850a848fd0cfcfb6f9041830"
+    ],
+    "note": "Identidad y pertenencia contrastadas en una prueba ficticia",
+    "groups": [
+      {
+        "groupId": "00000000-0000-4000-8000-000000000101",
+        "recordIds": [
+          "09213ede180a9ea8dc9b3b592d8582ad8fe2bb078f40e5a649e7b018c1aaa766"
+        ],
+        "serialNumber": "VERIFICADA-1",
+        "assetTag": null,
+        "evidenceReference": "Etiqueta física ficticia del grupo 1"
+      },
+      {
+        "groupId": "00000000-0000-4000-8000-000000000102",
+        "recordIds": [
+          "893702b93d0c1f6d5396bb49b08658668a8369c15d90672df85e76adc572e0df"
+        ],
+        "serialNumber": "VERIFICADA-2",
+        "assetTag": null,
+        "evidenceReference": "Etiqueta física ficticia del grupo 2"
+      }
+    ]
+  },
+  "source": {
+    "batchId": "00000000-0000-4000-8000-000000000001",
+    "batchVersion": 1,
+    "canApply": false,
+    "preview": {
+      "mode": "PREVIEW",
+      "canApply": false,
+      "persisted": false,
+      "comparisonMode": "DATABASE",
+      "source": {
+        "fileName": "Agrupacion-sintetica-QA.xlsx",
+        "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "rulesVersion": "mda-preview-1",
+      "asOf": "2026-10-25",
+      "timeZone": "America/Santiago",
+      "payloadDigest": "935460ec6653e1c0ad5fcb52e39ab6feddaffe7e1d476e27ab369dfcf5c09e73",
+      "databaseSnapshotDigest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "previewId": "1ce97fc34a415c02aad0efe9f125947b8bbf2c2fdc91360056fbb6106946f171",
+      "summary": {
+        "sheetCount": 1,
+        "populatedRows": 3,
+        "recordCount": 2,
+        "excludedCount": 1,
+        "candidateCount": 1,
+        "matchedCandidateCount": 0,
+        "consumableReviewCount": 0,
+        "manualSummaryCount": 0,
+        "sourceNoteCount": 0,
+        "blockingIssueCount": 0,
+        "warningCount": 16,
+        "infoCount": 1
+      },
+      "sheets": [
+        {
+          "name": "Recepción",
+          "kind": "ASSET_OBSERVATION",
+          "headerValid": true,
+          "populatedRows": 3,
+          "recordCount": 2,
+          "excludedCount": 1,
+          "filterRange": null
+        }
+      ],
+      "records": [
+        {
+          "id": "09213ede180a9ea8dc9b3b592d8582ad8fe2bb078f40e5a649e7b018c1aaa766",
+          "sheet": "Recepción",
+          "row": 4,
+          "kind": "ASSET_OBSERVATION",
+          "fields": {
+            "receivedDate": null,
+            "incomingOt": null,
+            "equipmentType": "Notebook",
+            "brand": "Marca QA",
+            "model": "Modelo QA",
+            "serialNumber": "REPETIDA",
+            "assetTag": null,
+            "incomingTicket": null,
+            "location": null,
+            "technicalCondition": null,
+            "availability": null,
+            "notes": null,
+            "usedDate": null,
+            "outgoingTicket": null,
+            "outgoingOt": null,
+            "details": null
+          },
+          "originalCells": {
+            "C": {
+              "type": "text",
+              "value": "Notebook"
+            },
+            "D": {
+              "type": "text",
+              "value": "Marca QA"
+            },
+            "E": {
+              "type": "text",
+              "value": "Modelo QA"
+            },
+            "F": {
+              "type": "text",
+              "value": "REPETIDA"
+            }
+          },
+          "serialKey": "REPETIDA",
+          "tagKey": null,
+          "statusEvidence": null
+        },
+        {
+          "id": "893702b93d0c1f6d5396bb49b08658668a8369c15d90672df85e76adc572e0df",
+          "sheet": "Recepción",
+          "row": 5,
+          "kind": "ASSET_OBSERVATION",
+          "fields": {
+            "receivedDate": null,
+            "incomingOt": null,
+            "equipmentType": "Notebook",
+            "brand": "Marca QA",
+            "model": "Modelo QA",
+            "serialNumber": "REPETIDA",
+            "assetTag": null,
+            "incomingTicket": null,
+            "location": null,
+            "technicalCondition": null,
+            "availability": null,
+            "notes": null,
+            "usedDate": null,
+            "outgoingTicket": null,
+            "outgoingOt": null,
+            "details": null
+          },
+          "originalCells": {
+            "C": {
+              "type": "text",
+              "value": "Notebook"
+            },
+            "D": {
+              "type": "text",
+              "value": "Marca QA"
+            },
+            "E": {
+              "type": "text",
+              "value": "Modelo QA"
+            },
+            "F": {
+              "type": "text",
+              "value": "REPETIDA"
+            }
+          },
+          "serialKey": "REPETIDA",
+          "tagKey": null,
+          "statusEvidence": null
+        }
+      ],
+      "candidates": [
+        {
+          "id": "7889f0b95c5848f5d435b4461834e6d1e46bdf82850a848fd0cfcfb6f9041830",
+          "identityKey": "SERIAL:REPETIDA",
+          "serials": [
+            "REPETIDA"
+          ],
+          "tags": [],
+          "recordIds": [
+            "09213ede180a9ea8dc9b3b592d8582ad8fe2bb078f40e5a649e7b018c1aaa766",
+            "893702b93d0c1f6d5396bb49b08658668a8369c15d90672df85e76adc572e0df"
+          ],
+          "reviewRequired": true,
+          "proposal": "REVIEW_NEW",
+          "existingAssets": [],
+          "proposedStatus": null,
+          "effectiveCandidateId": "7889f0b95c5848f5d435b4461834e6d1e46bdf82850a848fd0cfcfb6f9041830"
+        }
+      ],
+      "issues": [
+        {
+          "code": "MISSING_SHEET",
+          "severity": "WARNING",
+          "sheet": "Baja 2026",
+          "row": null,
+          "cell": null,
+          "candidateId": null
+        },
+        {
+          "code": "MISSING_SHEET",
+          "severity": "WARNING",
+          "sheet": "Baja 2025",
+          "row": null,
+          "cell": null,
+          "candidateId": null
+        },
+        {
+          "code": "MISSING_SHEET",
+          "severity": "WARNING",
+          "sheet": "NB Prestamo",
+          "row": null,
+          "cell": null,
+          "candidateId": null
+        },
+        {
+          "code": "MISSING_SHEET",
+          "severity": "WARNING",
+          "sheet": "FORTIGATE",
+          "row": null,
+          "cell": null,
+          "candidateId": null
+        },
+        {
+          "code": "MISSING_SHEET",
+          "severity": "WARNING",
+          "sheet": "Control Desvinculados",
+          "row": null,
+          "cell": null,
+          "candidateId": null
+        },
+        {
+          "code": "MISSING_SHEET",
+          "severity": "WARNING",
+          "sheet": "Baja 2024",
+          "row": null,
+          "cell": null,
+          "candidateId": null
+        },
+        {
+          "code": "MISSING_SHEET",
+          "severity": "WARNING",
+          "sheet": "Bodega 2",
+          "row": null,
+          "cell": null,
+          "candidateId": null
+        },
+        {
+          "code": "MISSING_SHEET",
+          "severity": "WARNING",
+          "sheet": "Bodega 1",
+          "row": null,
+          "cell": null,
+          "candidateId": null
+        },
+        {
+          "code": "MISSING_SHEET",
+          "severity": "WARNING",
+          "sheet": "Tintas",
+          "row": null,
+          "cell": null,
+          "candidateId": null
+        },
+        {
+          "code": "MISSING_SHEET",
+          "severity": "WARNING",
+          "sheet": "Desvinculados",
+          "row": null,
+          "cell": null,
+          "candidateId": null
+        },
+        {
+          "code": "MISSING_SHEET",
+          "severity": "WARNING",
+          "sheet": "Caja Negra",
+          "row": null,
+          "cell": null,
+          "candidateId": null
+        },
+        {
+          "code": "MISSING_SHEET",
+          "severity": "WARNING",
+          "sheet": "KIT CONTINGENCIA",
+          "row": null,
+          "cell": null,
+          "candidateId": null
+        },
+        {
+          "code": "MISSING_SHEET",
+          "severity": "WARNING",
+          "sheet": "CE",
+          "row": null,
+          "cell": null,
+          "candidateId": null
+        },
+        {
+          "code": "MISSING_SHEET",
+          "severity": "WARNING",
+          "sheet": "Transitorio",
+          "row": null,
+          "cell": null,
+          "candidateId": null
+        },
+        {
+          "code": "MISSING_SHEET",
+          "severity": "WARNING",
+          "sheet": "Disponible",
+          "row": null,
+          "cell": null,
+          "candidateId": null
+        },
+        {
+          "code": "MISSING_SHEET",
+          "severity": "WARNING",
+          "sheet": "Inventario MDA 2",
+          "row": null,
+          "cell": null,
+          "candidateId": null
+        },
+        {
+          "code": "MULTIPLE_SOURCE_OBSERVATIONS",
+          "severity": "INFO",
+          "sheet": null,
+          "row": null,
+          "cell": null,
+          "candidateId": "7889f0b95c5848f5d435b4461834e6d1e46bdf82850a848fd0cfcfb6f9041830"
+        }
+      ],
+      "excluded": [
+        {
+          "sheet": "Recepción",
+          "row": 3,
+          "reason": "HEADER_OR_TITLE",
+          "originalCells": {
+            "A": {
+              "type": "text",
+              "value": "Fecha"
+            },
+            "B": {
+              "type": "text",
+              "value": "OT Recepción"
+            },
+            "C": {
+              "type": "text",
+              "value": "Equipo"
+            },
+            "D": {
+              "type": "text",
+              "value": "Marca"
+            },
+            "E": {
+              "type": "text",
+              "value": "Modelo"
+            },
+            "F": {
+              "type": "text",
+              "value": "Serie"
+            },
+            "G": {
+              "type": "text",
+              "value": "Activo"
+            },
+            "H": {
+              "type": "text",
+              "value": "Ticket MDA"
+            },
+            "I": {
+              "type": "text",
+              "value": "Ubicación"
+            },
+            "J": {
+              "type": "text",
+              "value": "Estado"
+            },
+            "K": {
+              "type": "text",
+              "value": "Descripción"
+            },
+            "L": {
+              "type": "text",
+              "value": "Observación"
+            },
+            "M": {
+              "type": "text",
+              "value": "Fecha Utilizado"
+            },
+            "N": {
+              "type": "text",
+              "value": "Ticket MDA"
+            },
+            "O": {
+              "type": "text",
+              "value": "OT"
+            },
+            "P": {
+              "type": "text",
+              "value": "Detalles"
+            }
+          }
+        }
+      ]
+    },
+    "sourceContext": {
+      "revision": 0,
+      "corrections": [],
+      "identityRevisions": []
+    }
+  },
+  "plan": {
+    "rulesVersion": "mda-identity-group-plan-1",
+    "scope": "PHYSICAL_IDENTITY_GROUP_PLAN",
+    "asOf": "2026-10-25",
+    "timeZone": "America/Santiago",
+    "batchId": "00000000-0000-4000-8000-000000000001",
+    "batchVersion": 1,
+    "sourceRevision": 0,
+    "sourceHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "currentPreviewDigest": "a040de14b0bfe783c7e8728d993ead8d513b28984a5b80e8712e3454ce95aad8",
+    "simulatedPreviewDigest": "6297ab91cec2ef1d8e932d94e82811dd09a8bb11e5b085c9e68f110d4278e449",
+    "sourceContextDigest": "3e5988b4f5dd0861b04f0d9d19eeaf15d5e273c88f36da2e3166b3b790dbdd34",
+    "request": {
+      "expectedVersion": 1,
+      "expectedSourceRevision": 0,
+      "confirmation": "REVIEW_PHYSICAL_IDENTITY_GROUPS",
+      "candidateIds": [
+        "7889f0b95c5848f5d435b4461834e6d1e46bdf82850a848fd0cfcfb6f9041830"
+      ],
+      "note": "Identidad y pertenencia contrastadas en una prueba ficticia",
+      "groups": [
+        {
+          "groupId": "00000000-0000-4000-8000-000000000101",
+          "recordIds": [
+            "09213ede180a9ea8dc9b3b592d8582ad8fe2bb078f40e5a649e7b018c1aaa766"
+          ],
+          "serialNumber": "VERIFICADA-1",
+          "assetTag": null,
+          "evidenceReference": "Etiqueta física ficticia del grupo 1"
+        },
+        {
+          "groupId": "00000000-0000-4000-8000-000000000102",
+          "recordIds": [
+            "893702b93d0c1f6d5396bb49b08658668a8369c15d90672df85e76adc572e0df"
+          ],
+          "serialNumber": "VERIFICADA-2",
+          "assetTag": null,
+          "evidenceReference": "Etiqueta física ficticia del grupo 2"
+        }
+      ]
+    },
+    "operationKind": "SPLIT",
+    "originalCandidates": [
+      {
+        "candidateId": "7889f0b95c5848f5d435b4461834e6d1e46bdf82850a848fd0cfcfb6f9041830",
+        "recordIds": [
+          "09213ede180a9ea8dc9b3b592d8582ad8fe2bb078f40e5a649e7b018c1aaa766",
+          "893702b93d0c1f6d5396bb49b08658668a8369c15d90672df85e76adc572e0df"
+        ]
+      }
+    ],
+    "observations": [
+      {
+        "recordId": "09213ede180a9ea8dc9b3b592d8582ad8fe2bb078f40e5a649e7b018c1aaa766",
+        "sheet": "Recepción",
+        "row": 4,
+        "originalCandidateId": "7889f0b95c5848f5d435b4461834e6d1e46bdf82850a848fd0cfcfb6f9041830",
+        "proposedGroupId": "00000000-0000-4000-8000-000000000101",
+        "originalIdentityCells": {
+          "serialNumber": {
+            "type": "text",
+            "value": "REPETIDA"
+          },
+          "assetTag": null
+        },
+        "currentIdentityCells": {
+          "serialNumber": {
+            "type": "text",
+            "value": "REPETIDA"
+          },
+          "assetTag": null
+        }
+      },
+      {
+        "recordId": "893702b93d0c1f6d5396bb49b08658668a8369c15d90672df85e76adc572e0df",
+        "sheet": "Recepción",
+        "row": 5,
+        "originalCandidateId": "7889f0b95c5848f5d435b4461834e6d1e46bdf82850a848fd0cfcfb6f9041830",
+        "proposedGroupId": "00000000-0000-4000-8000-000000000102",
+        "originalIdentityCells": {
+          "serialNumber": {
+            "type": "text",
+            "value": "REPETIDA"
+          },
+          "assetTag": null
+        },
+        "currentIdentityCells": {
+          "serialNumber": {
+            "type": "text",
+            "value": "REPETIDA"
+          },
+          "assetTag": null
+        }
+      }
+    ],
+    "proposedGroups": [
+      {
+        "groupId": "00000000-0000-4000-8000-000000000101",
+        "recordIds": [
+          "09213ede180a9ea8dc9b3b592d8582ad8fe2bb078f40e5a649e7b018c1aaa766"
+        ],
+        "serialNumber": "VERIFICADA-1",
+        "assetTag": null,
+        "evidenceReference": "Etiqueta física ficticia del grupo 1",
+        "originalCandidateIds": [
+          "7889f0b95c5848f5d435b4461834e6d1e46bdf82850a848fd0cfcfb6f9041830"
+        ],
+        "simulatedCandidateIds": [
+          "633dfb48772cca99857f3f2039b71c8d4e8becb0fb25f667404e1342aa088b3a"
+        ],
+        "candidates": [
+          {
+            "id": "633dfb48772cca99857f3f2039b71c8d4e8becb0fb25f667404e1342aa088b3a",
+            "serials": [
+              "VERIFICADA-1"
+            ],
+            "tags": [],
+            "selectedRecordIds": [
+              "09213ede180a9ea8dc9b3b592d8582ad8fe2bb078f40e5a649e7b018c1aaa766"
+            ],
+            "outsideRecordCount": 0,
+            "existingAssets": [
+              {
+                "id": "00000000-0000-4000-8000-000000000200",
+                "productId": "00000000-0000-4000-8000-000000000190",
+                "serialNumber": "VERIFICADA-1",
+                "assetTag": null,
+                "status": "AVAILABLE",
+                "isActive": true,
+                "updatedAt": "2026-10-05T12:00:00.000Z",
+                "product": {
+                  "name": "Notebook de prueba 0"
+                }
+              },
+              {
+                "id": "00000000-0000-4000-8000-000000000201",
+                "productId": "00000000-0000-4000-8000-000000000190",
+                "serialNumber": "VERIFICADA-1",
+                "assetTag": null,
+                "status": "AVAILABLE",
+                "isActive": true,
+                "updatedAt": "2026-10-05T12:00:00.000Z",
+                "product": {
+                  "name": "Notebook de prueba 1"
+                }
+              },
+              {
+                "id": "00000000-0000-4000-8000-000000000202",
+                "productId": "00000000-0000-4000-8000-000000000190",
+                "serialNumber": "VERIFICADA-1",
+                "assetTag": null,
+                "status": "AVAILABLE",
+                "isActive": true,
+                "updatedAt": "2026-10-05T12:00:00.000Z",
+                "product": {
+                  "name": "Notebook de prueba 2"
+                }
+              },
+              {
+                "id": "00000000-0000-4000-8000-000000000203",
+                "productId": "00000000-0000-4000-8000-000000000190",
+                "serialNumber": "VERIFICADA-1",
+                "assetTag": null,
+                "status": "AVAILABLE",
+                "isActive": true,
+                "updatedAt": "2026-10-05T12:00:00.000Z",
+                "product": {
+                  "name": "Notebook de prueba 3"
+                }
+              },
+              {
+                "id": "00000000-0000-4000-8000-000000000204",
+                "productId": "00000000-0000-4000-8000-000000000190",
+                "serialNumber": "VERIFICADA-1",
+                "assetTag": null,
+                "status": "AVAILABLE",
+                "isActive": true,
+                "updatedAt": "2026-10-05T12:00:00.000Z",
+                "product": {
+                  "name": "Notebook de prueba 4"
+                }
+              },
+              {
+                "id": "00000000-0000-4000-8000-000000000205",
+                "productId": "00000000-0000-4000-8000-000000000190",
+                "serialNumber": "VERIFICADA-1",
+                "assetTag": null,
+                "status": "AVAILABLE",
+                "isActive": true,
+                "updatedAt": "2026-10-05T12:00:00.000Z",
+                "product": {
+                  "name": "Notebook de prueba 5"
+                }
+              },
+              {
+                "id": "00000000-0000-4000-8000-000000000206",
+                "productId": "00000000-0000-4000-8000-000000000190",
+                "serialNumber": "VERIFICADA-1",
+                "assetTag": null,
+                "status": "AVAILABLE",
+                "isActive": true,
+                "updatedAt": "2026-10-05T12:00:00.000Z",
+                "product": {
+                  "name": "Notebook de prueba 6"
+                }
+              },
+              {
+                "id": "00000000-0000-4000-8000-000000000207",
+                "productId": "00000000-0000-4000-8000-000000000190",
+                "serialNumber": "VERIFICADA-1",
+                "assetTag": null,
+                "status": "AVAILABLE",
+                "isActive": true,
+                "updatedAt": "2026-10-05T12:00:00.000Z",
+                "product": {
+                  "name": "Notebook de prueba 7"
+                }
+              },
+              {
+                "id": "00000000-0000-4000-8000-000000000208",
+                "productId": "00000000-0000-4000-8000-000000000190",
+                "serialNumber": "VERIFICADA-1",
+                "assetTag": null,
+                "status": "AVAILABLE",
+                "isActive": true,
+                "updatedAt": "2026-10-05T12:00:00.000Z",
+                "product": {
+                  "name": "Notebook de prueba 8"
+                }
+              },
+              {
+                "id": "00000000-0000-4000-8000-000000000209",
+                "productId": "00000000-0000-4000-8000-000000000190",
+                "serialNumber": "VERIFICADA-1",
+                "assetTag": null,
+                "status": "AVAILABLE",
+                "isActive": true,
+                "updatedAt": "2026-10-05T12:00:00.000Z",
+                "product": {
+                  "name": "Notebook de prueba 9"
+                }
+              }
+            ],
+            "existingAssetCount": 12,
+            "hasMoreExistingAssets": true
+          }
+        ]
+      },
+      {
+        "groupId": "00000000-0000-4000-8000-000000000102",
+        "recordIds": [
+          "893702b93d0c1f6d5396bb49b08658668a8369c15d90672df85e76adc572e0df"
+        ],
+        "serialNumber": "VERIFICADA-2",
+        "assetTag": null,
+        "evidenceReference": "Etiqueta física ficticia del grupo 2",
+        "originalCandidateIds": [
+          "7889f0b95c5848f5d435b4461834e6d1e46bdf82850a848fd0cfcfb6f9041830"
+        ],
+        "simulatedCandidateIds": [
+          "f21a6fbf7e49e6c695bff43ee7e2a8b2f683515006e7b2c958e7555e49c2a779"
+        ],
+        "candidates": [
+          {
+            "id": "f21a6fbf7e49e6c695bff43ee7e2a8b2f683515006e7b2c958e7555e49c2a779",
+            "serials": [
+              "VERIFICADA-2"
+            ],
+            "tags": [],
+            "selectedRecordIds": [
+              "893702b93d0c1f6d5396bb49b08658668a8369c15d90672df85e76adc572e0df"
+            ],
+            "outsideRecordCount": 0,
+            "existingAssets": [],
+            "existingAssetCount": 0,
+            "hasMoreExistingAssets": false
+          }
+        ]
+      }
+    ],
+    "changes": [
+      {
+        "recordId": "09213ede180a9ea8dc9b3b592d8582ad8fe2bb078f40e5a649e7b018c1aaa766",
+        "field": "serialNumber",
+        "action": "REPLACE",
+        "value": "VERIFICADA-1",
+        "candidateId": "7889f0b95c5848f5d435b4461834e6d1e46bdf82850a848fd0cfcfb6f9041830",
+        "sheet": "Recepción",
+        "row": 4,
+        "column": "F",
+        "originalCell": {
+          "type": "text",
+          "value": "REPETIDA"
+        },
+        "beforeCell": {
+          "type": "text",
+          "value": "REPETIDA"
+        },
+        "afterCell": {
+          "type": "text",
+          "value": "VERIFICADA-1"
+        }
+      },
+      {
+        "recordId": "893702b93d0c1f6d5396bb49b08658668a8369c15d90672df85e76adc572e0df",
+        "field": "serialNumber",
+        "action": "REPLACE",
+        "value": "VERIFICADA-2",
+        "candidateId": "7889f0b95c5848f5d435b4461834e6d1e46bdf82850a848fd0cfcfb6f9041830",
+        "sheet": "Recepción",
+        "row": 5,
+        "column": "F",
+        "originalCell": {
+          "type": "text",
+          "value": "REPETIDA"
+        },
+        "beforeCell": {
+          "type": "text",
+          "value": "REPETIDA"
+        },
+        "afterCell": {
+          "type": "text",
+          "value": "VERIFICADA-2"
+        }
+      }
+    ],
+    "blockers": [
+      {
+        "code": "SOURCE_AMBIGUOUS_EXISTING_ASSET",
+        "issue": {
+          "code": "AMBIGUOUS_EXISTING_ASSET",
+          "severity": "BLOCKING",
+          "sheet": null,
+          "row": null,
+          "cell": null,
+          "candidateId": "633dfb48772cca99857f3f2039b71c8d4e8becb0fb25f667404e1342aa088b3a"
+        }
+      },
+      {
+        "code": "SOURCE_CANDIDATE_ALREADY_APPLIED",
+        "relatedId": "00000000-0000-4000-8000-000000000060"
+      },
+      {
+        "code": "SOURCE_OBSERVATION_ALREADY_APPLIED",
+        "recordId": "09213ede180a9ea8dc9b3b592d8582ad8fe2bb078f40e5a649e7b018c1aaa766",
+        "relatedId": "00000000-0000-4000-8000-000000000040"
+      },
+      {
+        "code": "SOURCE_OBSERVATION_ALREADY_APPLIED",
+        "recordId": "893702b93d0c1f6d5396bb49b08658668a8369c15d90672df85e76adc572e0df",
+        "relatedId": "00000000-0000-4000-8000-000000000046"
+      }
+    ],
+    "issues": [
+      {
+        "code": "AMBIGUOUS_EXISTING_ASSET",
+        "severity": "BLOCKING",
+        "sheet": null,
+        "row": null,
+        "cell": null,
+        "candidateId": "633dfb48772cca99857f3f2039b71c8d4e8becb0fb25f667404e1342aa088b3a"
+      }
+    ],
+    "warnings": [],
+    "impacts": {
+      "pilotItems": [
+        {
+          "id": "00000000-0000-4000-8000-000000000060",
+          "candidateId": "7889f0b95c5848f5d435b4461834e6d1e46bdf82850a848fd0cfcfb6f9041830",
+          "assetId": "00000000-0000-4000-8000-000000000061",
+          "applicationId": "00000000-0000-4000-8000-000000000062"
+        }
+      ],
+      "decisions": [
+        {
+          "id": "00000000-0000-4000-8000-000000000063",
+          "targetType": "CANDIDATE",
+          "targetId": "7889f0b95c5848f5d435b4461834e6d1e46bdf82850a848fd0cfcfb6f9041830",
+          "action": "HOLD",
+          "linkedAssetId": null,
+          "batchVersion": 1,
+          "sourceRevision": 0
+        }
+      ],
+      "evidence": [
+        {
+          "id": "00000000-0000-4000-8000-000000000040",
+          "recordId": "09213ede180a9ea8dc9b3b592d8582ad8fe2bb078f40e5a649e7b018c1aaa766",
+          "candidateId": "7889f0b95c5848f5d435b4461834e6d1e46bdf82850a848fd0cfcfb6f9041830",
+          "captureId": "00000000-0000-4000-8000-000000000041",
+          "captureBatchId": "00000000-0000-4000-8000-000000000042",
+          "capturedAssetId": "00000000-0000-4000-8000-000000000043",
+          "currentAssetId": null,
+          "capturedSourceRevision": 5,
+          "sourceRevision": 9,
+          "evidenceVersion": 2,
+          "amendmentId": "00000000-0000-4000-8000-000000000044",
+          "assignmentUse": {
+            "itemId": "00000000-0000-4000-8000-000000000045",
+            "endpoint": "START"
+          },
+          "retirementUse": null
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000046",
+          "recordId": "893702b93d0c1f6d5396bb49b08658668a8369c15d90672df85e76adc572e0df",
+          "candidateId": "7889f0b95c5848f5d435b4461834e6d1e46bdf82850a848fd0cfcfb6f9041830",
+          "captureId": "00000000-0000-4000-8000-000000000041",
+          "captureBatchId": "00000000-0000-4000-8000-000000000042",
+          "capturedAssetId": "00000000-0000-4000-8000-000000000043",
+          "currentAssetId": null,
+          "capturedSourceRevision": 5,
+          "sourceRevision": 9,
+          "evidenceVersion": 2,
+          "amendmentId": "00000000-0000-4000-8000-000000000044",
+          "assignmentUse": null,
+          "retirementUse": {
+            "id": "00000000-0000-4000-8000-000000000047",
+            "assetId": "00000000-0000-4000-8000-000000000048"
+          }
+        }
+      ]
+    },
+    "requiresEvidenceLineageReview": true,
+    "requiresDecisionRenewal": true,
+    "requiresCoordinatedIdentityReview": false,
+    "nextWorkflow": "LINEAGE_WORKFLOW_NOT_IMPLEMENTED",
+    "planId": "3de7010d446045f826a516371209df6416f21743393d8b0f4547308743e1775e",
+    "canApply": false,
+    "persisted": false,
+    "affectsCurrentState": false,
+    "lineagePersistenceImplemented": false,
+    "proposalValidationComplete": false,
+    "summary": {
+      "originalCandidateCount": 1,
+      "proposedGroupCount": 2,
+      "observationCount": 2,
+      "changedCellCount": 2,
+      "blockingCount": 4,
+      "warningCount": 0
+    }
+  }
+}

@@ -3,7 +3,7 @@ import type { FastifyInstance } from 'fastify';
 
 import { requireAuthenticated, requireCsrf, requireRole } from '../auth/service.js';
 import { ApiError } from '../lib/errors.js';
-import { assetIdSchema, assignmentCreateSchema, assignmentListQuerySchema, assignmentParamsSchema, assignmentUserQuerySchema } from './assignments-schemas.js';
+import { assetIdSchema, assignmentCreateSchema, assignmentListQuerySchema, assignmentParamsSchema, assignmentReturnSchema, assignmentUserQuerySchema } from './assignments-schemas.js';
 import { createAssignment, getAssignment, listAssignmentUsers, listAssetAssignments, listAssignments, returnAssignment } from './assignments-service.js';
 
 function parse<T>(schema: { safeParse: (input: unknown) => { success: true; data: T } | { success: false; error: { issues: unknown[] } } }, input: unknown): T {
@@ -28,7 +28,7 @@ export function registerAssignmentRoutes(app: FastifyInstance, database: PrismaC
   app.post('/assets/:id/assignments', { preHandler: [operators, requireCsrf] }, async (request, reply) => {
     try {
       const { id } = parse(assetIdSchema, request.params);
-      const assignment = await createAssignment(database, id, parse(assignmentCreateSchema, request.body), request.auth!.user.id);
+      const assignment = await createAssignment(database, id, parse(assignmentCreateSchema, request.body), request.auth!.user.id, request.auth!.user.role);
       return reply.status(201).send(assignment);
     } catch (error) {
       return assignmentConflict(error);
@@ -43,7 +43,7 @@ export function registerAssignmentRoutes(app: FastifyInstance, database: PrismaC
 
   app.post('/assets/:id/assignments/:assignmentId/return', { preHandler: [operators, requireCsrf] }, async (request) => {
     const { id, assignmentId } = parse(assignmentParamsSchema, request.params);
-    return returnAssignment(database, id, assignmentId, request.auth!.user.id);
+    return returnAssignment(database, id, assignmentId, request.auth!.user.id, parse(assignmentReturnSchema, request.body ?? {}), request.auth!.user.role);
   });
 
   app.get('/assignments', { preHandler: authenticate }, async (request) => listAssignments(database, parse(assignmentListQuerySchema, request.query)));

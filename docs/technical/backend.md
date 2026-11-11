@@ -13,12 +13,12 @@ Related documents:
 ## 1. Stack
 
 ```text
-Node.js
+Node.js 24.x
 TypeScript
-Fastify
-Prisma
-PostgreSQL
-Zod
+Fastify 5 (lockfile: 5.12.5)
+Prisma 6 (lockfile: 6.19.3)
+PostgreSQL (verified: 18.6)
+Zod 3
 ```
 
 ## 2. Layering
@@ -76,8 +76,10 @@ transaction: create movement + update materialized stock
   ↓
 commit
   ↓
-publish WebSocket event (after commit)
+return HTTP response
 ```
+
+WebSocket publishing is planned, not present in the current pipeline. When implemented, publish only after commit.
 
 ## 4. Validation
 
@@ -97,15 +99,15 @@ publish WebSocket event (after commit)
 - **Structured logging**: machine-readable logs with request ids, user ids, and domain context.
 - Do not log secrets (passwords, tokens, CSRF tokens).
 
-## 7. Realtime publishing
+## 7. Realtime publishing (planned)
 
-- Domain services/notifications publish WebSocket events **after** commit only.
+- No WebSocket server, publisher or notification persistence is implemented. Future publishing must occur **after** commit only.
 - The backend is the only publisher; see [realtime.md](realtime.md) and ADR-7.
 
 ## 8. Operational concerns
 
-- **Health checks**: expose readiness/liveness endpoints.
-- **Graceful shutdown**: close HTTP and WebSocket servers, stop accepting work, let in-flight requests finish, close DB connections.
+- **Health**: `GET /health` is a static process-liveness response, not a database readiness probe. Verify migration status, runtime database access and authenticated reads separately.
+- **Graceful shutdown**: termination closes Fastify and disconnects Prisma; no WebSocket server exists to close.
 - Configuration/secrets from environment (see [security.md](security.md) §4).
 
 ## 9. Shared package discipline
@@ -118,7 +120,7 @@ All endpoints return JSON. This list reflects the implemented routes (`apps/api/
 
 ### Conventions
 
-- **Authentication**: session cookie `inventory_ti_session` (HttpOnly, `SameSite=Lax`, secure when `COOKIE_SECURE=true`). Obtained via `POST /auth/login`.
+- **Authentication**: host-only session cookie `inventory_ti_session` (HttpOnly, SameSite configurable with default `Lax`, secure when `COOKIE_SECURE=true`). Obtained via `POST /auth/login`.
 - **CSRF**: state-changing requests send the session-bound token in the `x-csrf-token` header, obtained from `GET /auth/csrf`.
 - **Role guards**: `JEFE`, `COORDINADOR`, `SOPORTE` — see [roles.md](../product/roles.md).
 - **Errors**: `{ code, message, details? }`.
@@ -130,22 +132,32 @@ All endpoints return JSON. This list reflects the implemented routes (`apps/api/
   - `400 INVALID_ACTIVATION_CODE` — activation code is invalid, expired, used, or mismatched.
   - `404 NOT_FOUND` — resource not found.
   - `409 CONFLICT` — duplicate unique data (also `ASSET_IDENTIFIER_CONFLICT`).
+  - `409 LAST_ADMIN_REQUIRED` — operation would leave no active, password-configured JEFE.
+  - `403 SELF_ACCESS_RESET` — administrators cannot reset their own access.
+  - `409 PRODUCT_TRACKING_MODE_LOCKED` — cannot change tracking mode after stock/movements/assets exist.
+  - `409 INSUFFICIENT_STOCK` / `STOCK_LIMIT_EXCEEDED` — resulting stock negative / outside supported integer range.
+  - `409 PRODUCT_INACTIVE` / `ASSET_PRODUCT_UNSUPPORTED` / `INITIAL_ALREADY_EXISTS` — invalid inventory operation for product/state.
+  - `409 CORRECTION_ALREADY_EXISTS` / `CORRECTION_ALREADY_PROCESSED` / `CORRECTION_STALE` / `CORRECTION_NOT_SUPPORTED` — pending duplicate, processed request, outdated effective quantity or unsupported movement.
+  - `413 PAYLOAD_TOO_LARGE` / `415 UNSUPPORTED_MEDIA_TYPE` — body rejected by the HTTP framework.
   - `429 RATE_LIMITED` — too many login or activation attempts.
   - `500 INTERNAL_ERROR` — unhandled error.
+
+The server messages are technical English; clients should map stable `code` values to localized notifications, not expose raw messages. Quantities fit signed 32-bit integers (`-2147483648` to `2147483647`); normal movement quantities are positive except signed adjustments. Negative current stock and overflow are rejected transactionally.
 
 ### Health
 
 | Method | Path | Auth | Notes |
 | --- | --- | --- | --- |
-| GET | `/health` | public | Returns `{ service: "api", status: "ok" }`. |
+| GET | `/health` | public | Static `{ service: "api", status: "ok" }`; does not query the database. |
 
 ### Auth
 
 | Method | Path | Auth | Notes |
 | --- | --- | --- | --- |
-| POST | `/auth/login` | public | `{ identifier, password }`. Sets the session cookie. Rate limited to 10 tries per 15 minutes per IP. |
+| POST | `/auth/login` | public | `{ identifier, password }`. Sets cookie. Up to 10 failed plus in-flight attempts per IP per 15 minutes; success resets failures. |
 | POST | `/auth/activate` | public | `{ identifier, activationCode, password }`; consumes a one-time code and does not create a session. |
 | GET | `/auth/me` | session | Returns the current user. |
+| PATCH | `/auth/me` | session + CSRF | Update `displayName`, `email`, `phone`, not username/role. Audit: `PROFILE_UPDATED`. |
 | GET | `/auth/csrf` | session | Returns `{ csrfToken }`. |
 | POST | `/auth/password` | session + CSRF | Changes the authenticated user password, preserves the current session, and invalidates the others. |
 | POST | `/auth/logout` | session + CSRF | Deletes the session and clears the cookie. |
@@ -154,12 +166,15 @@ All endpoints return JSON. This list reflects the implemented routes (`apps/api/
 
 | Method | Path | Auth | Notes |
 | --- | --- | --- | --- |
-| GET | `/users` | JEFE | List, `?isActive=`. Ordered by username. |
+| GET | `/users` | JEFE | `isActive`, `search`, `limit` (1–100, default 25), `offset` (default 0). Returns `users`, `total`, `limit`, `offset`, `hasMore`; ordered by username. |
 | GET | `/users/:id` | JEFE | Single user. |
-| POST | `/users` | JEFE + CSRF | Create user (name, email, username, phone, role); leaves it pending and returns a one-time activation code. Audit: `USER_CREATED`. |
+| POST | `/users` | JEFE + CSRF | Required `displayName`, email, username, phone, role; no password. Active but pending password setup; returns `{ user, activationCode }`. Audit: `USER_CREATED`. |
 | PATCH | `/users/:id` | JEFE + CSRF | Update profile and role fields only; administrators cannot set passwords. Audit: `USER_UPDATED`. |
-| POST | `/users/:id/activate` / `POST /users/:id/deactivate` | JEFE + CSRF | Activate/deactivate administratively; deactivation revokes all sessions. Audit: `USER_ACTIVATED` / `USER_DEACTIVATED`. |
+| POST | `/users/:id/activate` | JEFE + CSRF | Administrative activation only, no password/code. Audit: `USER_ACTIVATED`. |
+| POST | `/users/:id/deactivate` | JEFE + CSRF | Administrative deactivation; revokes all sessions. Audit: `USER_DEACTIVATED`. |
 | POST | `/users/:id/reset-access` | JEFE + CSRF | Invalidates the password and sessions, then returns a fresh one-time activation code. Audit: `ACCESS_RESET_REQUESTED`. |
+
+See [user administration](../deployment/users.md) for setup, private code delivery, 24-hour expiration and last-usable-JEFE protection. Own access reset is forbidden; pending/inactive JEFEs do not count as replacements. Login/password changes serialize against account mutations and recheck password state after acquiring the user lock.
 
 ### Catalog (products)
 
@@ -170,7 +185,10 @@ All endpoints return JSON. This list reflects the implemented routes (`apps/api/
 | GET | `/products/:id` | session | Single product. |
 | POST | `/products` | JEFE + CSRF | Product names are globally unique case-insensitively. Audit: `PRODUCT_CREATED`. |
 | PATCH | `/products/:id` | JEFE + CSRF | Audit: `PRODUCT_UPDATED`. |
-| POST | `/products/:id/activate` / `deactivate` | JEFE + CSRF | Audit: `PRODUCT_ACTIVATED` / `PRODUCT_DEACTIVATED`. |
+| POST | `/products/:id/activate` | JEFE + CSRF | Audit: `PRODUCT_ACTIVATED`. |
+| POST | `/products/:id/deactivate` | JEFE + CSRF | Audit: `PRODUCT_DEACTIVATED`. |
+
+Names and nonblank SKUs are globally unique case-insensitively after trimming. Tracking mode is locked once **any** stock row (even zero), movement or asset exists. Product locks and a database trigger protect that boundary.
 
 ### Inventory (quantitative stock & movements)
 
@@ -194,6 +212,7 @@ Movements are created atomically with the materialized stock update (row-locked)
 | --- | --- | --- | --- |
 | GET | `/assets` | session | List, `?productId=`, `?status=`, `?assetTag=`, `?serialNumber=`, `?isActive=`, `?search=` (tag/serial/product name). |
 | GET | `/assets/:id` | session | Single asset. |
+| GET | `/assets/:id/history` | session | `{ events }` timeline combining movements, assignment starts/returns and asset audits, newest first; up to 200 source rows each, safe actor projection. |
 | POST | `/assets` | JEFE/COORDINADOR + CSRF | Product must be ASSET-tracked and active. Audit: `ASSET_CREATED`. Duplicate tag/serial → 409. |
 | PATCH | `/assets/:id` | JEFE/COORDINADOR + CSRF | Field updates. Audit: `ASSET_UPDATED`. |
 | POST | `/assets/:id/status` | JEFE/COORDINADOR/SOPORTE + CSRF | General status change; cannot set `ASSIGNED` or `DECOMMISSIONED` directly. Audit: `ASSET_STATUS_CHANGED`. |
@@ -215,7 +234,7 @@ Assignment and return operations use the same Asset row lock, keep Asset/Assignm
 | --- | --- | --- | --- |
 | POST | `/inventory/movements/:movementId/corrections` | JEFE/COORDINADOR/SOPORTE + CSRF | Receives signed final `correctedQuantity` and reason (legacy `delta` supported). JEFE applies immediately; other roles create `PENDING` requests. |
 | GET | `/inventory/products/:productId/history` | session | Corrected movement effects and running balances, with compensating audit records returned separately. |
-| GET | `/corrections` | session | JEFE sees all; COORDINADOR/SOPORTE see only requests created by that user. Optional `?status=` filter. |
+| GET | `/corrections` | session | JEFE sees all; others only their requests. Filters: `status`, `search`, `movementType`, `from`, `to`, `limit` (1–100, default 25), `offset`; returns `corrections`, `total`, `limit`, `offset`, `hasMore`. |
 | GET | `/corrections/:id` | session | Same visibility rules as the list endpoint. |
 | POST | `/corrections/:id/approve` | JEFE + CSRF | Rejects self-approval; atomically creates an `ADJUSTMENT`, updates stock, marks the request approved, and writes audit entries. |
 | POST | `/corrections/:id/reject` | JEFE + CSRF | Marks a pending request rejected without changing stock. |

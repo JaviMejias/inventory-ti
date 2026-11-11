@@ -1,0 +1,496 @@
+{
+  "workbook": {
+    "formatVersion": 1,
+    "source": {
+      "fileName": "Agrupacion-sintetica-QA.xlsx",
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    "sheets": [
+      {
+        "name": "Recepción",
+        "filterRange": null,
+        "rows": [
+          {
+            "row": 3,
+            "hidden": false,
+            "cells": {
+              "A": {
+                "type": "text",
+                "value": "Fecha"
+              },
+              "B": {
+                "type": "text",
+                "value": "OT Recepción"
+              },
+              "C": {
+                "type": "text",
+                "value": "Equipo"
+              },
+              "D": {
+                "type": "text",
+                "value": "Marca"
+              },
+              "E": {
+                "type": "text",
+                "value": "Modelo"
+              },
+              "F": {
+                "type": "text",
+                "value": "Serie"
+              },
+              "G": {
+                "type": "text",
+                "value": "Activo"
+              },
+              "H": {
+                "type": "text",
+                "value": "Ticket MDA"
+              },
+              "I": {
+                "type": "text",
+                "value": "Ubicación"
+              },
+              "J": {
+                "type": "text",
+                "value": "Estado"
+              },
+              "K": {
+                "type": "text",
+                "value": "Descripción"
+              },
+              "L": {
+                "type": "text",
+                "value": "Observación"
+              },
+              "M": {
+                "type": "text",
+                "value": "Fecha Utilizado"
+              },
+              "N": {
+                "type": "text",
+                "value": "Ticket MDA"
+              },
+              "O": {
+                "type": "text",
+                "value": "OT"
+              },
+              "P": {
+                "type": "text",
+                "value": "Detalles"
+              }
+            }
+          },
+          {
+            "row": 4,
+            "hidden": false,
+            "cells": {
+              "C": {
+                "type": "text",
+                "value": "Notebook"
+              },
+              "D": {
+                "type": "text",
+                "value": "Marca QA"
+              },
+              "E": {
+                "type": "text",
+                "value": "Modelo QA"
+              },
+              "F": {
+                "type": "text",
+                "value": "REPETIDA"
+              }
+            }
+          },
+          {
+            "row": 5,
+            "hidden": false,
+            "cells": {
+              "C": {
+                "type": "text",
+                "value": "Notebook"
+              },
+              "D": {
+                "type": "text",
+                "value": "Marca QA"
+              },
+              "E": {
+                "type": "text",
+                "value": "Modelo QA"
+              },
+              "F": {
+                "type": "text",
+                "value": "REPETIDA"
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "preview": {
+    "mode": "PREVIEW",
+    "canApply": false,
+    "persisted": false,
+    "comparisonMode": "DATABASE",
+    "source": {
+      "fileName": "Agrupacion-sintetica-QA.xlsx",
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    "rulesVersion": "mda-preview-1",
+    "asOf": "2026-10-26",
+    "timeZone": "America/Santiago",
+    "payloadDigest": "e967f3b8746078f4afb3ae8f2644bb80cc3c4f38cd6204d283a36540fc61705b",
+    "databaseSnapshotDigest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "previewId": "ea4527d65804ca52452588dda3f60564c3307880a503657a7211f5e175b35348",
+    "summary": {
+      "sheetCount": 1,
+      "populatedRows": 3,
+      "recordCount": 2,
+      "excludedCount": 1,
+      "candidateCount": 1,
+      "matchedCandidateCount": 0,
+      "consumableReviewCount": 0,
+      "manualSummaryCount": 0,
+      "sourceNoteCount": 0,
+      "blockingIssueCount": 0,
+      "warningCount": 16,
+      "infoCount": 1
+    },
+    "sheets": [
+      {
+        "name": "Recepción",
+        "kind": "ASSET_OBSERVATION",
+        "headerValid": true,
+        "populatedRows": 3,
+        "recordCount": 2,
+        "excludedCount": 1,
+        "hidden": false,
+        "filterRange": null
+      }
+    ],
+    "records": [
+      {
+        "id": "09213ede180a9ea8dc9b3b592d8582ad8fe2bb078f40e5a649e7b018c1aaa766",
+        "sheet": "Recepción",
+        "row": 4,
+        "hidden": false,
+        "kind": "ASSET_OBSERVATION",
+        "fields": {
+          "receivedDate": null,
+          "incomingOt": null,
+          "equipmentType": "Notebook",
+          "brand": "Marca QA",
+          "model": "Modelo QA",
+          "serialNumber": "REPETIDA",
+          "assetTag": null,
+          "incomingTicket": null,
+          "location": null,
+          "technicalCondition": null,
+          "availability": null,
+          "notes": null,
+          "usedDate": null,
+          "outgoingTicket": null,
+          "outgoingOt": null,
+          "details": null
+        },
+        "originalCells": {
+          "C": {
+            "type": "text",
+            "value": "Notebook"
+          },
+          "D": {
+            "type": "text",
+            "value": "Marca QA"
+          },
+          "E": {
+            "type": "text",
+            "value": "Modelo QA"
+          },
+          "F": {
+            "type": "text",
+            "value": "REPETIDA"
+          }
+        },
+        "serialKey": "REPETIDA",
+        "tagKey": null,
+        "statusEvidence": null
+      },
+      {
+        "id": "893702b93d0c1f6d5396bb49b08658668a8369c15d90672df85e76adc572e0df",
+        "sheet": "Recepción",
+        "row": 5,
+        "hidden": false,
+        "kind": "ASSET_OBSERVATION",
+        "fields": {
+          "receivedDate": null,
+          "incomingOt": null,
+          "equipmentType": "Notebook",
+          "brand": "Marca QA",
+          "model": "Modelo QA",
+          "serialNumber": "REPETIDA",
+          "assetTag": null,
+          "incomingTicket": null,
+          "location": null,
+          "technicalCondition": null,
+          "availability": null,
+          "notes": null,
+          "usedDate": null,
+          "outgoingTicket": null,
+          "outgoingOt": null,
+          "details": null
+        },
+        "originalCells": {
+          "C": {
+            "type": "text",
+            "value": "Notebook"
+          },
+          "D": {
+            "type": "text",
+            "value": "Marca QA"
+          },
+          "E": {
+            "type": "text",
+            "value": "Modelo QA"
+          },
+          "F": {
+            "type": "text",
+            "value": "REPETIDA"
+          }
+        },
+        "serialKey": "REPETIDA",
+        "tagKey": null,
+        "statusEvidence": null
+      }
+    ],
+    "candidates": [
+      {
+        "id": "7889f0b95c5848f5d435b4461834e6d1e46bdf82850a848fd0cfcfb6f9041830",
+        "identityKey": "SERIAL:REPETIDA",
+        "serials": [
+          "REPETIDA"
+        ],
+        "tags": [],
+        "recordIds": [
+          "09213ede180a9ea8dc9b3b592d8582ad8fe2bb078f40e5a649e7b018c1aaa766",
+          "893702b93d0c1f6d5396bb49b08658668a8369c15d90672df85e76adc572e0df"
+        ],
+        "reviewRequired": true,
+        "proposal": "REVIEW_NEW",
+        "existingAssets": [],
+        "proposedStatus": null
+      }
+    ],
+    "issues": [
+      {
+        "code": "MISSING_SHEET",
+        "severity": "WARNING",
+        "sheet": "Baja 2026",
+        "row": null,
+        "cell": null,
+        "candidateId": null
+      },
+      {
+        "code": "MISSING_SHEET",
+        "severity": "WARNING",
+        "sheet": "Baja 2025",
+        "row": null,
+        "cell": null,
+        "candidateId": null
+      },
+      {
+        "code": "MISSING_SHEET",
+        "severity": "WARNING",
+        "sheet": "NB Prestamo",
+        "row": null,
+        "cell": null,
+        "candidateId": null
+      },
+      {
+        "code": "MISSING_SHEET",
+        "severity": "WARNING",
+        "sheet": "FORTIGATE",
+        "row": null,
+        "cell": null,
+        "candidateId": null
+      },
+      {
+        "code": "MISSING_SHEET",
+        "severity": "WARNING",
+        "sheet": "Control Desvinculados",
+        "row": null,
+        "cell": null,
+        "candidateId": null
+      },
+      {
+        "code": "MISSING_SHEET",
+        "severity": "WARNING",
+        "sheet": "Baja 2024",
+        "row": null,
+        "cell": null,
+        "candidateId": null
+      },
+      {
+        "code": "MISSING_SHEET",
+        "severity": "WARNING",
+        "sheet": "Bodega 2",
+        "row": null,
+        "cell": null,
+        "candidateId": null
+      },
+      {
+        "code": "MISSING_SHEET",
+        "severity": "WARNING",
+        "sheet": "Bodega 1",
+        "row": null,
+        "cell": null,
+        "candidateId": null
+      },
+      {
+        "code": "MISSING_SHEET",
+        "severity": "WARNING",
+        "sheet": "Tintas",
+        "row": null,
+        "cell": null,
+        "candidateId": null
+      },
+      {
+        "code": "MISSING_SHEET",
+        "severity": "WARNING",
+        "sheet": "Desvinculados",
+        "row": null,
+        "cell": null,
+        "candidateId": null
+      },
+      {
+        "code": "MISSING_SHEET",
+        "severity": "WARNING",
+        "sheet": "Caja Negra",
+        "row": null,
+        "cell": null,
+        "candidateId": null
+      },
+      {
+        "code": "MISSING_SHEET",
+        "severity": "WARNING",
+        "sheet": "KIT CONTINGENCIA",
+        "row": null,
+        "cell": null,
+        "candidateId": null
+      },
+      {
+        "code": "MISSING_SHEET",
+        "severity": "WARNING",
+        "sheet": "CE",
+        "row": null,
+        "cell": null,
+        "candidateId": null
+      },
+      {
+        "code": "MISSING_SHEET",
+        "severity": "WARNING",
+        "sheet": "Transitorio",
+        "row": null,
+        "cell": null,
+        "candidateId": null
+      },
+      {
+        "code": "MISSING_SHEET",
+        "severity": "WARNING",
+        "sheet": "Disponible",
+        "row": null,
+        "cell": null,
+        "candidateId": null
+      },
+      {
+        "code": "MISSING_SHEET",
+        "severity": "WARNING",
+        "sheet": "Inventario MDA 2",
+        "row": null,
+        "cell": null,
+        "candidateId": null
+      },
+      {
+        "code": "MULTIPLE_SOURCE_OBSERVATIONS",
+        "severity": "INFO",
+        "sheet": null,
+        "row": null,
+        "cell": null,
+        "candidateId": "7889f0b95c5848f5d435b4461834e6d1e46bdf82850a848fd0cfcfb6f9041830"
+      }
+    ],
+    "excluded": [
+      {
+        "sheet": "Recepción",
+        "row": 3,
+        "reason": "HEADER_OR_TITLE",
+        "originalCells": {
+          "A": {
+            "type": "text",
+            "value": "Fecha"
+          },
+          "B": {
+            "type": "text",
+            "value": "OT Recepción"
+          },
+          "C": {
+            "type": "text",
+            "value": "Equipo"
+          },
+          "D": {
+            "type": "text",
+            "value": "Marca"
+          },
+          "E": {
+            "type": "text",
+            "value": "Modelo"
+          },
+          "F": {
+            "type": "text",
+            "value": "Serie"
+          },
+          "G": {
+            "type": "text",
+            "value": "Activo"
+          },
+          "H": {
+            "type": "text",
+            "value": "Ticket MDA"
+          },
+          "I": {
+            "type": "text",
+            "value": "Ubicación"
+          },
+          "J": {
+            "type": "text",
+            "value": "Estado"
+          },
+          "K": {
+            "type": "text",
+            "value": "Descripción"
+          },
+          "L": {
+            "type": "text",
+            "value": "Observación"
+          },
+          "M": {
+            "type": "text",
+            "value": "Fecha Utilizado"
+          },
+          "N": {
+            "type": "text",
+            "value": "Ticket MDA"
+          },
+          "O": {
+            "type": "text",
+            "value": "OT"
+          },
+          "P": {
+            "type": "text",
+            "value": "Detalles"
+          }
+        }
+      }
+    ]
+  }
+}

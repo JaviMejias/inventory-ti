@@ -1,0 +1,983 @@
+{
+  "original": {
+    "mode": "PREVIEW",
+    "canApply": false,
+    "persisted": false,
+    "comparisonMode": "SOURCE_ONLY",
+    "source": {
+      "fileName": "Agrupacion-sintetica-QA.xlsx",
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    "rulesVersion": "mda-preview-1",
+    "asOf": "2026-10-25",
+    "timeZone": "America/Santiago",
+    "payloadDigest": "1fd209776e635ae1c0a2650536adf825adcab38cc915900a12e673b6abbeea08",
+    "databaseSnapshotDigest": null,
+    "previewId": "f21b26ab53824daa3ec69689a76e8c5aa250a79ebd06deecf421cc81c0a666f9",
+    "summary": {
+      "sheetCount": 1,
+      "populatedRows": 3,
+      "recordCount": 2,
+      "excludedCount": 1,
+      "candidateCount": 2,
+      "matchedCandidateCount": 0,
+      "consumableReviewCount": 0,
+      "manualSummaryCount": 0,
+      "sourceNoteCount": 0,
+      "blockingIssueCount": 0,
+      "warningCount": 16,
+      "infoCount": 0
+    },
+    "sheets": [
+      {
+        "name": "Recepción",
+        "kind": "ASSET_OBSERVATION",
+        "headerValid": true,
+        "populatedRows": 3,
+        "recordCount": 2,
+        "excludedCount": 1,
+        "filterRange": null
+      }
+    ],
+    "records": [
+      {
+        "id": "09213ede180a9ea8dc9b3b592d8582ad8fe2bb078f40e5a649e7b018c1aaa766",
+        "sheet": "Recepción",
+        "row": 4,
+        "kind": "ASSET_OBSERVATION",
+        "fields": {
+          "receivedDate": null,
+          "incomingOt": null,
+          "equipmentType": "Notebook",
+          "brand": "Marca QA",
+          "model": "Modelo QA",
+          "serialNumber": "UNO",
+          "assetTag": null,
+          "incomingTicket": null,
+          "location": null,
+          "technicalCondition": null,
+          "availability": null,
+          "notes": null,
+          "usedDate": null,
+          "outgoingTicket": null,
+          "outgoingOt": null,
+          "details": null
+        },
+        "originalCells": {
+          "C": {
+            "type": "text",
+            "value": "Notebook"
+          },
+          "D": {
+            "type": "text",
+            "value": "Marca QA"
+          },
+          "E": {
+            "type": "text",
+            "value": "Modelo QA"
+          },
+          "F": {
+            "type": "text",
+            "value": "UNO"
+          }
+        },
+        "serialKey": "UNO",
+        "tagKey": null,
+        "statusEvidence": null
+      },
+      {
+        "id": "893702b93d0c1f6d5396bb49b08658668a8369c15d90672df85e76adc572e0df",
+        "sheet": "Recepción",
+        "row": 5,
+        "kind": "ASSET_OBSERVATION",
+        "fields": {
+          "receivedDate": null,
+          "incomingOt": null,
+          "equipmentType": "Notebook",
+          "brand": "Marca QA",
+          "model": "Modelo QA",
+          "serialNumber": "DOS",
+          "assetTag": null,
+          "incomingTicket": null,
+          "location": null,
+          "technicalCondition": null,
+          "availability": null,
+          "notes": null,
+          "usedDate": null,
+          "outgoingTicket": null,
+          "outgoingOt": null,
+          "details": null
+        },
+        "originalCells": {
+          "C": {
+            "type": "text",
+            "value": "Notebook"
+          },
+          "D": {
+            "type": "text",
+            "value": "Marca QA"
+          },
+          "E": {
+            "type": "text",
+            "value": "Modelo QA"
+          },
+          "F": {
+            "type": "text",
+            "value": "DOS"
+          }
+        },
+        "serialKey": "DOS",
+        "tagKey": null,
+        "statusEvidence": null
+      }
+    ],
+    "candidates": [
+      {
+        "id": "4ee9e6970b1b7d6e3a6500dd106a6b3aef410ceba567d9c442b12e436ed6637e",
+        "identityKey": "SERIAL:DOS",
+        "serials": [
+          "DOS"
+        ],
+        "tags": [],
+        "recordIds": [
+          "893702b93d0c1f6d5396bb49b08658668a8369c15d90672df85e76adc572e0df"
+        ],
+        "reviewRequired": true,
+        "proposal": "REVIEW_SOURCE_ONLY",
+        "existingAssets": [],
+        "proposedStatus": null
+      },
+      {
+        "id": "b26af0ee86a8188a61aa96114f6e58c7fa7792fa8568fae6256c47fd157a5002",
+        "identityKey": "SERIAL:UNO",
+        "serials": [
+          "UNO"
+        ],
+        "tags": [],
+        "recordIds": [
+          "09213ede180a9ea8dc9b3b592d8582ad8fe2bb078f40e5a649e7b018c1aaa766"
+        ],
+        "reviewRequired": true,
+        "proposal": "REVIEW_SOURCE_ONLY",
+        "existingAssets": [],
+        "proposedStatus": null
+      }
+    ],
+    "issues": [
+      {
+        "code": "MISSING_SHEET",
+        "severity": "WARNING",
+        "sheet": "Baja 2026",
+        "row": null,
+        "cell": null,
+        "candidateId": null
+      },
+      {
+        "code": "MISSING_SHEET",
+        "severity": "WARNING",
+        "sheet": "Baja 2025",
+        "row": null,
+        "cell": null,
+        "candidateId": null
+      },
+      {
+        "code": "MISSING_SHEET",
+        "severity": "WARNING",
+        "sheet": "NB Prestamo",
+        "row": null,
+        "cell": null,
+        "candidateId": null
+      },
+      {
+        "code": "MISSING_SHEET",
+        "severity": "WARNING",
+        "sheet": "FORTIGATE",
+        "row": null,
+        "cell": null,
+        "candidateId": null
+      },
+      {
+        "code": "MISSING_SHEET",
+        "severity": "WARNING",
+        "sheet": "Control Desvinculados",
+        "row": null,
+        "cell": null,
+        "candidateId": null
+      },
+      {
+        "code": "MISSING_SHEET",
+        "severity": "WARNING",
+        "sheet": "Baja 2024",
+        "row": null,
+        "cell": null,
+        "candidateId": null
+      },
+      {
+        "code": "MISSING_SHEET",
+        "severity": "WARNING",
+        "sheet": "Bodega 2",
+        "row": null,
+        "cell": null,
+        "candidateId": null
+      },
+      {
+        "code": "MISSING_SHEET",
+        "severity": "WARNING",
+        "sheet": "Bodega 1",
+        "row": null,
+        "cell": null,
+        "candidateId": null
+      },
+      {
+        "code": "MISSING_SHEET",
+        "severity": "WARNING",
+        "sheet": "Tintas",
+        "row": null,
+        "cell": null,
+        "candidateId": null
+      },
+      {
+        "code": "MISSING_SHEET",
+        "severity": "WARNING",
+        "sheet": "Desvinculados",
+        "row": null,
+        "cell": null,
+        "candidateId": null
+      },
+      {
+        "code": "MISSING_SHEET",
+        "severity": "WARNING",
+        "sheet": "Caja Negra",
+        "row": null,
+        "cell": null,
+        "candidateId": null
+      },
+      {
+        "code": "MISSING_SHEET",
+        "severity": "WARNING",
+        "sheet": "KIT CONTINGENCIA",
+        "row": null,
+        "cell": null,
+        "candidateId": null
+      },
+      {
+        "code": "MISSING_SHEET",
+        "severity": "WARNING",
+        "sheet": "CE",
+        "row": null,
+        "cell": null,
+        "candidateId": null
+      },
+      {
+        "code": "MISSING_SHEET",
+        "severity": "WARNING",
+        "sheet": "Transitorio",
+        "row": null,
+        "cell": null,
+        "candidateId": null
+      },
+      {
+        "code": "MISSING_SHEET",
+        "severity": "WARNING",
+        "sheet": "Disponible",
+        "row": null,
+        "cell": null,
+        "candidateId": null
+      },
+      {
+        "code": "MISSING_SHEET",
+        "severity": "WARNING",
+        "sheet": "Inventario MDA 2",
+        "row": null,
+        "cell": null,
+        "candidateId": null
+      }
+    ],
+    "excluded": [
+      {
+        "sheet": "Recepción",
+        "row": 3,
+        "reason": "HEADER_OR_TITLE",
+        "originalCells": {
+          "A": {
+            "type": "text",
+            "value": "Fecha"
+          },
+          "B": {
+            "type": "text",
+            "value": "OT Recepción"
+          },
+          "C": {
+            "type": "text",
+            "value": "Equipo"
+          },
+          "D": {
+            "type": "text",
+            "value": "Marca"
+          },
+          "E": {
+            "type": "text",
+            "value": "Modelo"
+          },
+          "F": {
+            "type": "text",
+            "value": "Serie"
+          },
+          "G": {
+            "type": "text",
+            "value": "Activo"
+          },
+          "H": {
+            "type": "text",
+            "value": "Ticket MDA"
+          },
+          "I": {
+            "type": "text",
+            "value": "Ubicación"
+          },
+          "J": {
+            "type": "text",
+            "value": "Estado"
+          },
+          "K": {
+            "type": "text",
+            "value": "Descripción"
+          },
+          "L": {
+            "type": "text",
+            "value": "Observación"
+          },
+          "M": {
+            "type": "text",
+            "value": "Fecha Utilizado"
+          },
+          "N": {
+            "type": "text",
+            "value": "Ticket MDA"
+          },
+          "O": {
+            "type": "text",
+            "value": "OT"
+          },
+          "P": {
+            "type": "text",
+            "value": "Detalles"
+          }
+        }
+      }
+    ]
+  },
+  "input": {
+    "expectedVersion": 1,
+    "expectedSourceRevision": 0,
+    "confirmation": "REVIEW_PHYSICAL_IDENTITY_GROUPS",
+    "candidateIds": [
+      "4ee9e6970b1b7d6e3a6500dd106a6b3aef410ceba567d9c442b12e436ed6637e",
+      "b26af0ee86a8188a61aa96114f6e58c7fa7792fa8568fae6256c47fd157a5002"
+    ],
+    "note": "Identidad y pertenencia contrastadas en una prueba ficticia",
+    "groups": [
+      {
+        "groupId": "00000000-0000-4000-8000-000000000101",
+        "recordIds": [
+          "09213ede180a9ea8dc9b3b592d8582ad8fe2bb078f40e5a649e7b018c1aaa766",
+          "893702b93d0c1f6d5396bb49b08658668a8369c15d90672df85e76adc572e0df"
+        ],
+        "serialNumber": "UNIFICADA",
+        "assetTag": null,
+        "evidenceReference": "Etiqueta física ficticia del grupo 1"
+      }
+    ]
+  },
+  "source": {
+    "batchId": "00000000-0000-4000-8000-000000000001",
+    "batchVersion": 1,
+    "canApply": false,
+    "preview": {
+      "mode": "PREVIEW",
+      "canApply": false,
+      "persisted": false,
+      "comparisonMode": "DATABASE",
+      "source": {
+        "fileName": "Agrupacion-sintetica-QA.xlsx",
+        "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "rulesVersion": "mda-preview-1",
+      "asOf": "2026-10-25",
+      "timeZone": "America/Santiago",
+      "payloadDigest": "1fd209776e635ae1c0a2650536adf825adcab38cc915900a12e673b6abbeea08",
+      "databaseSnapshotDigest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "previewId": "15d31b1ca23e6e923202e8f398ababc0387d7d734eae2904783858dbd96a2f57",
+      "summary": {
+        "sheetCount": 1,
+        "populatedRows": 3,
+        "recordCount": 2,
+        "excludedCount": 1,
+        "candidateCount": 2,
+        "matchedCandidateCount": 0,
+        "consumableReviewCount": 0,
+        "manualSummaryCount": 0,
+        "sourceNoteCount": 0,
+        "blockingIssueCount": 0,
+        "warningCount": 16,
+        "infoCount": 0
+      },
+      "sheets": [
+        {
+          "name": "Recepción",
+          "kind": "ASSET_OBSERVATION",
+          "headerValid": true,
+          "populatedRows": 3,
+          "recordCount": 2,
+          "excludedCount": 1,
+          "filterRange": null
+        }
+      ],
+      "records": [
+        {
+          "id": "09213ede180a9ea8dc9b3b592d8582ad8fe2bb078f40e5a649e7b018c1aaa766",
+          "sheet": "Recepción",
+          "row": 4,
+          "kind": "ASSET_OBSERVATION",
+          "fields": {
+            "receivedDate": null,
+            "incomingOt": null,
+            "equipmentType": "Notebook",
+            "brand": "Marca QA",
+            "model": "Modelo QA",
+            "serialNumber": "UNO",
+            "assetTag": null,
+            "incomingTicket": null,
+            "location": null,
+            "technicalCondition": null,
+            "availability": null,
+            "notes": null,
+            "usedDate": null,
+            "outgoingTicket": null,
+            "outgoingOt": null,
+            "details": null
+          },
+          "originalCells": {
+            "C": {
+              "type": "text",
+              "value": "Notebook"
+            },
+            "D": {
+              "type": "text",
+              "value": "Marca QA"
+            },
+            "E": {
+              "type": "text",
+              "value": "Modelo QA"
+            },
+            "F": {
+              "type": "text",
+              "value": "UNO"
+            }
+          },
+          "serialKey": "UNO",
+          "tagKey": null,
+          "statusEvidence": null
+        },
+        {
+          "id": "893702b93d0c1f6d5396bb49b08658668a8369c15d90672df85e76adc572e0df",
+          "sheet": "Recepción",
+          "row": 5,
+          "kind": "ASSET_OBSERVATION",
+          "fields": {
+            "receivedDate": null,
+            "incomingOt": null,
+            "equipmentType": "Notebook",
+            "brand": "Marca QA",
+            "model": "Modelo QA",
+            "serialNumber": "DOS",
+            "assetTag": null,
+            "incomingTicket": null,
+            "location": null,
+            "technicalCondition": null,
+            "availability": null,
+            "notes": null,
+            "usedDate": null,
+            "outgoingTicket": null,
+            "outgoingOt": null,
+            "details": null
+          },
+          "originalCells": {
+            "C": {
+              "type": "text",
+              "value": "Notebook"
+            },
+            "D": {
+              "type": "text",
+              "value": "Marca QA"
+            },
+            "E": {
+              "type": "text",
+              "value": "Modelo QA"
+            },
+            "F": {
+              "type": "text",
+              "value": "DOS"
+            }
+          },
+          "serialKey": "DOS",
+          "tagKey": null,
+          "statusEvidence": null
+        }
+      ],
+      "candidates": [
+        {
+          "id": "4ee9e6970b1b7d6e3a6500dd106a6b3aef410ceba567d9c442b12e436ed6637e",
+          "identityKey": "SERIAL:DOS",
+          "serials": [
+            "DOS"
+          ],
+          "tags": [],
+          "recordIds": [
+            "893702b93d0c1f6d5396bb49b08658668a8369c15d90672df85e76adc572e0df"
+          ],
+          "reviewRequired": true,
+          "proposal": "REVIEW_NEW",
+          "existingAssets": [],
+          "proposedStatus": null,
+          "effectiveCandidateId": "4ee9e6970b1b7d6e3a6500dd106a6b3aef410ceba567d9c442b12e436ed6637e"
+        },
+        {
+          "id": "b26af0ee86a8188a61aa96114f6e58c7fa7792fa8568fae6256c47fd157a5002",
+          "identityKey": "SERIAL:UNO",
+          "serials": [
+            "UNO"
+          ],
+          "tags": [],
+          "recordIds": [
+            "09213ede180a9ea8dc9b3b592d8582ad8fe2bb078f40e5a649e7b018c1aaa766"
+          ],
+          "reviewRequired": true,
+          "proposal": "REVIEW_NEW",
+          "existingAssets": [],
+          "proposedStatus": null,
+          "effectiveCandidateId": "b26af0ee86a8188a61aa96114f6e58c7fa7792fa8568fae6256c47fd157a5002"
+        }
+      ],
+      "issues": [
+        {
+          "code": "MISSING_SHEET",
+          "severity": "WARNING",
+          "sheet": "Baja 2026",
+          "row": null,
+          "cell": null,
+          "candidateId": null
+        },
+        {
+          "code": "MISSING_SHEET",
+          "severity": "WARNING",
+          "sheet": "Baja 2025",
+          "row": null,
+          "cell": null,
+          "candidateId": null
+        },
+        {
+          "code": "MISSING_SHEET",
+          "severity": "WARNING",
+          "sheet": "NB Prestamo",
+          "row": null,
+          "cell": null,
+          "candidateId": null
+        },
+        {
+          "code": "MISSING_SHEET",
+          "severity": "WARNING",
+          "sheet": "FORTIGATE",
+          "row": null,
+          "cell": null,
+          "candidateId": null
+        },
+        {
+          "code": "MISSING_SHEET",
+          "severity": "WARNING",
+          "sheet": "Control Desvinculados",
+          "row": null,
+          "cell": null,
+          "candidateId": null
+        },
+        {
+          "code": "MISSING_SHEET",
+          "severity": "WARNING",
+          "sheet": "Baja 2024",
+          "row": null,
+          "cell": null,
+          "candidateId": null
+        },
+        {
+          "code": "MISSING_SHEET",
+          "severity": "WARNING",
+          "sheet": "Bodega 2",
+          "row": null,
+          "cell": null,
+          "candidateId": null
+        },
+        {
+          "code": "MISSING_SHEET",
+          "severity": "WARNING",
+          "sheet": "Bodega 1",
+          "row": null,
+          "cell": null,
+          "candidateId": null
+        },
+        {
+          "code": "MISSING_SHEET",
+          "severity": "WARNING",
+          "sheet": "Tintas",
+          "row": null,
+          "cell": null,
+          "candidateId": null
+        },
+        {
+          "code": "MISSING_SHEET",
+          "severity": "WARNING",
+          "sheet": "Desvinculados",
+          "row": null,
+          "cell": null,
+          "candidateId": null
+        },
+        {
+          "code": "MISSING_SHEET",
+          "severity": "WARNING",
+          "sheet": "Caja Negra",
+          "row": null,
+          "cell": null,
+          "candidateId": null
+        },
+        {
+          "code": "MISSING_SHEET",
+          "severity": "WARNING",
+          "sheet": "KIT CONTINGENCIA",
+          "row": null,
+          "cell": null,
+          "candidateId": null
+        },
+        {
+          "code": "MISSING_SHEET",
+          "severity": "WARNING",
+          "sheet": "CE",
+          "row": null,
+          "cell": null,
+          "candidateId": null
+        },
+        {
+          "code": "MISSING_SHEET",
+          "severity": "WARNING",
+          "sheet": "Transitorio",
+          "row": null,
+          "cell": null,
+          "candidateId": null
+        },
+        {
+          "code": "MISSING_SHEET",
+          "severity": "WARNING",
+          "sheet": "Disponible",
+          "row": null,
+          "cell": null,
+          "candidateId": null
+        },
+        {
+          "code": "MISSING_SHEET",
+          "severity": "WARNING",
+          "sheet": "Inventario MDA 2",
+          "row": null,
+          "cell": null,
+          "candidateId": null
+        }
+      ],
+      "excluded": [
+        {
+          "sheet": "Recepción",
+          "row": 3,
+          "reason": "HEADER_OR_TITLE",
+          "originalCells": {
+            "A": {
+              "type": "text",
+              "value": "Fecha"
+            },
+            "B": {
+              "type": "text",
+              "value": "OT Recepción"
+            },
+            "C": {
+              "type": "text",
+              "value": "Equipo"
+            },
+            "D": {
+              "type": "text",
+              "value": "Marca"
+            },
+            "E": {
+              "type": "text",
+              "value": "Modelo"
+            },
+            "F": {
+              "type": "text",
+              "value": "Serie"
+            },
+            "G": {
+              "type": "text",
+              "value": "Activo"
+            },
+            "H": {
+              "type": "text",
+              "value": "Ticket MDA"
+            },
+            "I": {
+              "type": "text",
+              "value": "Ubicación"
+            },
+            "J": {
+              "type": "text",
+              "value": "Estado"
+            },
+            "K": {
+              "type": "text",
+              "value": "Descripción"
+            },
+            "L": {
+              "type": "text",
+              "value": "Observación"
+            },
+            "M": {
+              "type": "text",
+              "value": "Fecha Utilizado"
+            },
+            "N": {
+              "type": "text",
+              "value": "Ticket MDA"
+            },
+            "O": {
+              "type": "text",
+              "value": "OT"
+            },
+            "P": {
+              "type": "text",
+              "value": "Detalles"
+            }
+          }
+        }
+      ]
+    },
+    "sourceContext": {
+      "revision": 0,
+      "corrections": [],
+      "identityRevisions": []
+    }
+  },
+  "plan": {
+    "rulesVersion": "mda-identity-group-plan-1",
+    "scope": "PHYSICAL_IDENTITY_GROUP_PLAN",
+    "asOf": "2026-10-25",
+    "timeZone": "America/Santiago",
+    "batchId": "00000000-0000-4000-8000-000000000001",
+    "batchVersion": 1,
+    "sourceRevision": 0,
+    "sourceHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "currentPreviewDigest": "15d31b1ca23e6e923202e8f398ababc0387d7d734eae2904783858dbd96a2f57",
+    "simulatedPreviewDigest": "1e72c8dc4926a7435a70584918c2c6dfda09ea6ea15d68d7c805cebfa7b9834a",
+    "sourceContextDigest": "3e5988b4f5dd0861b04f0d9d19eeaf15d5e273c88f36da2e3166b3b790dbdd34",
+    "request": {
+      "expectedVersion": 1,
+      "expectedSourceRevision": 0,
+      "confirmation": "REVIEW_PHYSICAL_IDENTITY_GROUPS",
+      "candidateIds": [
+        "4ee9e6970b1b7d6e3a6500dd106a6b3aef410ceba567d9c442b12e436ed6637e",
+        "b26af0ee86a8188a61aa96114f6e58c7fa7792fa8568fae6256c47fd157a5002"
+      ],
+      "note": "Identidad y pertenencia contrastadas en una prueba ficticia",
+      "groups": [
+        {
+          "groupId": "00000000-0000-4000-8000-000000000101",
+          "recordIds": [
+            "09213ede180a9ea8dc9b3b592d8582ad8fe2bb078f40e5a649e7b018c1aaa766",
+            "893702b93d0c1f6d5396bb49b08658668a8369c15d90672df85e76adc572e0df"
+          ],
+          "serialNumber": "UNIFICADA",
+          "assetTag": null,
+          "evidenceReference": "Etiqueta física ficticia del grupo 1"
+        }
+      ]
+    },
+    "operationKind": "MERGE",
+    "originalCandidates": [
+      {
+        "candidateId": "4ee9e6970b1b7d6e3a6500dd106a6b3aef410ceba567d9c442b12e436ed6637e",
+        "recordIds": [
+          "893702b93d0c1f6d5396bb49b08658668a8369c15d90672df85e76adc572e0df"
+        ]
+      },
+      {
+        "candidateId": "b26af0ee86a8188a61aa96114f6e58c7fa7792fa8568fae6256c47fd157a5002",
+        "recordIds": [
+          "09213ede180a9ea8dc9b3b592d8582ad8fe2bb078f40e5a649e7b018c1aaa766"
+        ]
+      }
+    ],
+    "observations": [
+      {
+        "recordId": "09213ede180a9ea8dc9b3b592d8582ad8fe2bb078f40e5a649e7b018c1aaa766",
+        "sheet": "Recepción",
+        "row": 4,
+        "originalCandidateId": "b26af0ee86a8188a61aa96114f6e58c7fa7792fa8568fae6256c47fd157a5002",
+        "proposedGroupId": "00000000-0000-4000-8000-000000000101",
+        "originalIdentityCells": {
+          "serialNumber": {
+            "type": "text",
+            "value": "UNO"
+          },
+          "assetTag": null
+        },
+        "currentIdentityCells": {
+          "serialNumber": {
+            "type": "text",
+            "value": "UNO"
+          },
+          "assetTag": null
+        }
+      },
+      {
+        "recordId": "893702b93d0c1f6d5396bb49b08658668a8369c15d90672df85e76adc572e0df",
+        "sheet": "Recepción",
+        "row": 5,
+        "originalCandidateId": "4ee9e6970b1b7d6e3a6500dd106a6b3aef410ceba567d9c442b12e436ed6637e",
+        "proposedGroupId": "00000000-0000-4000-8000-000000000101",
+        "originalIdentityCells": {
+          "serialNumber": {
+            "type": "text",
+            "value": "DOS"
+          },
+          "assetTag": null
+        },
+        "currentIdentityCells": {
+          "serialNumber": {
+            "type": "text",
+            "value": "DOS"
+          },
+          "assetTag": null
+        }
+      }
+    ],
+    "proposedGroups": [
+      {
+        "groupId": "00000000-0000-4000-8000-000000000101",
+        "recordIds": [
+          "09213ede180a9ea8dc9b3b592d8582ad8fe2bb078f40e5a649e7b018c1aaa766",
+          "893702b93d0c1f6d5396bb49b08658668a8369c15d90672df85e76adc572e0df"
+        ],
+        "serialNumber": "UNIFICADA",
+        "assetTag": null,
+        "evidenceReference": "Etiqueta física ficticia del grupo 1",
+        "originalCandidateIds": [
+          "4ee9e6970b1b7d6e3a6500dd106a6b3aef410ceba567d9c442b12e436ed6637e",
+          "b26af0ee86a8188a61aa96114f6e58c7fa7792fa8568fae6256c47fd157a5002"
+        ],
+        "simulatedCandidateIds": [
+          "1f05ce9643f78952615df2b985045b1b673d511a61bf2ec9c559832fbdf12b92"
+        ],
+        "candidates": [
+          {
+            "id": "1f05ce9643f78952615df2b985045b1b673d511a61bf2ec9c559832fbdf12b92",
+            "serials": [
+              "UNIFICADA"
+            ],
+            "tags": [],
+            "selectedRecordIds": [
+              "09213ede180a9ea8dc9b3b592d8582ad8fe2bb078f40e5a649e7b018c1aaa766",
+              "893702b93d0c1f6d5396bb49b08658668a8369c15d90672df85e76adc572e0df"
+            ],
+            "outsideRecordCount": 0,
+            "existingAssets": [],
+            "existingAssetCount": 0,
+            "hasMoreExistingAssets": false
+          }
+        ]
+      }
+    ],
+    "changes": [
+      {
+        "recordId": "09213ede180a9ea8dc9b3b592d8582ad8fe2bb078f40e5a649e7b018c1aaa766",
+        "field": "serialNumber",
+        "action": "REPLACE",
+        "value": "UNIFICADA",
+        "candidateId": "b26af0ee86a8188a61aa96114f6e58c7fa7792fa8568fae6256c47fd157a5002",
+        "sheet": "Recepción",
+        "row": 4,
+        "column": "F",
+        "originalCell": {
+          "type": "text",
+          "value": "UNO"
+        },
+        "beforeCell": {
+          "type": "text",
+          "value": "UNO"
+        },
+        "afterCell": {
+          "type": "text",
+          "value": "UNIFICADA"
+        }
+      },
+      {
+        "recordId": "893702b93d0c1f6d5396bb49b08658668a8369c15d90672df85e76adc572e0df",
+        "field": "serialNumber",
+        "action": "REPLACE",
+        "value": "UNIFICADA",
+        "candidateId": "4ee9e6970b1b7d6e3a6500dd106a6b3aef410ceba567d9c442b12e436ed6637e",
+        "sheet": "Recepción",
+        "row": 5,
+        "column": "F",
+        "originalCell": {
+          "type": "text",
+          "value": "DOS"
+        },
+        "beforeCell": {
+          "type": "text",
+          "value": "DOS"
+        },
+        "afterCell": {
+          "type": "text",
+          "value": "UNIFICADA"
+        }
+      }
+    ],
+    "blockers": [],
+    "issues": [
+      {
+        "code": "MULTIPLE_SOURCE_OBSERVATIONS",
+        "severity": "INFO",
+        "sheet": null,
+        "row": null,
+        "cell": null,
+        "candidateId": "1f05ce9643f78952615df2b985045b1b673d511a61bf2ec9c559832fbdf12b92"
+      }
+    ],
+    "warnings": [],
+    "impacts": {
+      "pilotItems": [],
+      "decisions": [],
+      "evidence": []
+    },
+    "requiresEvidenceLineageReview": false,
+    "requiresDecisionRenewal": false,
+    "requiresCoordinatedIdentityReview": false,
+    "nextWorkflow": "LINEAGE_WORKFLOW_NOT_IMPLEMENTED",
+    "planId": "3eeae14847e0aae7e338c8307141b59a431de3d5973c3f658ce80f02d69060bb",
+    "canApply": false,
+    "persisted": false,
+    "affectsCurrentState": false,
+    "lineagePersistenceImplemented": false,
+    "proposalValidationComplete": true,
+    "summary": {
+      "originalCandidateCount": 2,
+      "proposedGroupCount": 1,
+      "observationCount": 2,
+      "changedCellCount": 2,
+      "blockingCount": 0,
+      "warningCount": 0
+    }
+  }
+}

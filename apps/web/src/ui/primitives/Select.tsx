@@ -23,6 +23,7 @@ type SelectProps = {
   required?: boolean;
   id?: string;
   className?: string;
+  'aria-label'?: string;
   'aria-labelledby'?: string;
   'aria-describedby'?: string;
   'aria-invalid'?: boolean;
@@ -33,7 +34,7 @@ const MENU_GAP = 8;
 
 type PopoverPosition = Pick<CSSProperties, 'top' | 'bottom' | 'left' | 'width'>;
 
-export function Select({ value, options, onChange, placeholder = 'Selecciona una opción', searchable = false, resultLimit = DEFAULT_RESULT_LIMIT, searchPlaceholder = 'Buscar…', emptyMessage = 'No hay coincidencias.', disabled = false, required = false, id, className, 'aria-labelledby': labelledBy, 'aria-describedby': describedBy, 'aria-invalid': invalid }: SelectProps) {
+export function Select({ value, options, onChange, placeholder = 'Selecciona una opción', searchable = false, resultLimit = DEFAULT_RESULT_LIMIT, searchPlaceholder = 'Buscar…', emptyMessage = 'No hay coincidencias.', disabled = false, required = false, id, className, 'aria-label': ariaLabel, 'aria-labelledby': labelledBy, 'aria-describedby': describedBy, 'aria-invalid': invalid }: SelectProps) {
   const generatedId = useId();
   const triggerId = id ?? `select-${generatedId}`;
   const listboxId = `${triggerId}-listbox`;
@@ -138,10 +139,14 @@ export function Select({ value, options, onChange, placeholder = 'Selecciona una
     setClosing(true);
     setQuery('');
     closeTimerRef.current = globalThis.window.setTimeout(() => {
+      // Another control may have received focus during the exit animation. Do not steal it back.
+      const focused = globalThis.document.activeElement;
+      const shouldRestore = restoreFocus && triggerRef.current?.isConnected &&
+        (focused === globalThis.document.body || rootRef.current?.contains(focused) || popoverRef.current?.contains(focused));
       setOpen(false);
       setClosing(false);
       closeTimerRef.current = undefined;
-      if (restoreFocus) triggerRef.current?.focus();
+      if (shouldRestore) triggerRef.current?.focus({ preventScroll: true });
     }, 140);
   }
 
@@ -202,6 +207,7 @@ export function Select({ value, options, onChange, placeholder = 'Selecciona una
         aria-expanded={open && !closing}
         aria-controls={open ? listboxId : undefined}
         aria-activedescendant={open && !searchable && visibleOptions[activeIndex] ? listboxId + '-' + visibleOptions[activeIndex].value : undefined}
+        aria-label={ariaLabel}
         aria-labelledby={labelledBy}
         aria-describedby={describedBy}
         aria-invalid={invalid}

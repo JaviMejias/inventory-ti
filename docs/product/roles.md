@@ -59,7 +59,7 @@ Legend: ✅ = full access · ❌ = not allowed · Text cells (e.g., "Relevant in
 
 ## 3. JEFE — full administrative authority
 
-`JEFE` can, without restriction:
+`JEFE` can, subject to the safeguards below:
 
 - Manage users and roles.
 - Manage products.
@@ -76,6 +76,7 @@ Legend: ✅ = full access · ❌ = not allowed · Text cells (e.g., "Relevant in
 3. **`SOPORTE` cannot approve corrections** under any circumstance.
 4. **Inventory operations** are always recorded as `InventoryMovement` records; nobody, including `JEFE`, performs arbitrary direct stock edits. See [inventory.md](inventory.md).
 5. Permissions above describe the MVP. A future *granular permissions* mechanism may expand or refine them. `COORDINADOR` user/role administration remains restricted until such a mechanism grants it explicitly.
+6. **At least one usable JEFE must remain.** User deactivation, role changes, and administrative access resets cannot remove the last active JEFE with a configured password. Inactive and pending-activation accounts do not satisfy this requirement. These mutations and test-account quarantine share a PostgreSQL transaction advisory lock, so concurrent requests from different API processes cannot bypass the safeguard. User-management permissions are rechecked inside the serialized transaction.
 
 ## 5. Future: granular permissions
 

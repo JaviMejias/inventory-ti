@@ -1,6 +1,7 @@
 import { CorrectionStatus, MovementType, ProductTrackingMode, type Prisma, type PrismaClient, type Role } from '@prisma/client';
 
 import { ApiError } from '../lib/errors.js';
+import { maximumQuantity, minimumQuantity } from '../lib/quantity.js';
 import { createCompensatingAdjustment } from './inventory-service.js';
 import { currentMovementEffect } from './inventory-history.js';
 import type { CorrectionCreateInput, CorrectionListQuery } from './corrections-schemas.js';
@@ -97,7 +98,7 @@ export async function createCorrection(database: PrismaClient, movementId: strin
     const correctedQuantity = 'correctedQuantity' in input ? input.correctedQuantity : previousQuantity + input.delta;
     const delta = correctedQuantity - previousQuantity;
     if (delta === 0) throw new ApiError(400, 'CORRECTION_NO_CHANGE', 'The corrected quantity must differ from the current movement quantity');
-    if (correctedQuantity < -2_147_483_648 || correctedQuantity > 2_147_483_647 || delta < -2_147_483_648 || delta > 2_147_483_647) throw new ApiError(400, 'CORRECTION_INVALID_QUANTITY', 'The corrected quantity or difference is outside the supported range');
+    if (correctedQuantity < minimumQuantity || correctedQuantity > maximumQuantity || delta < minimumQuantity || delta > maximumQuantity) throw new ApiError(400, 'CORRECTION_INVALID_QUANTITY', 'The corrected quantity or difference is outside the supported range');
     if ((movement.movementType === MovementType.EXIT && correctedQuantity > 0) || (movement.movementType !== MovementType.EXIT && movement.movementType !== MovementType.ADJUSTMENT && correctedQuantity < 0)) {
       throw new ApiError(400, 'CORRECTION_INVALID_QUANTITY', 'The corrected quantity must preserve the movement direction');
     }

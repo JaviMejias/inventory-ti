@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useId, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
+import { environment } from '../../config/environment';
+import { productMetadataLabel, type ProductMetadata } from './inventory-metadata';
 import { ApiRequestError, apiRequest, getApiErrorMessage, getApiFieldErrors, getCsrfToken } from '../../lib/api';
 import {
   Alert,
@@ -13,8 +15,9 @@ import {
   Field,
   Icon,
   ListFooter,
+  ModuleFilters,
+  ModuleHeader,
   PageContainer,
-  PageToolbar,
   OverflowText,
   Select,
   Switch,
@@ -27,7 +30,7 @@ import { useAuth } from '../auth/auth-context';
 const PAGE_SIZE = 25;
 const COMPACT_DATE_FORMATTER = new Intl.DateTimeFormat('es-CL', { day: '2-digit', month: 'short', year: 'numeric' });
 
-type Product = { id: string; name: string; sku: string | null; trackingMode: 'QUANTITY' | 'ASSET'; lowStockThreshold: number; active: boolean; updatedAt: string };
+type Product = { id: string; name: string; sku: string | null; trackingMode: 'QUANTITY' | 'ASSET'; lowStockThreshold: number; active: boolean; updatedAt: string } & ProductMetadata;
 type Page<T> = { items: T[]; total: number; limit: number; offset: number; hasMore: boolean };
 
 const emptyPage: Page<never> = { items: [], total: 0, limit: PAGE_SIZE, offset: 0, hasMore: false };
@@ -108,17 +111,7 @@ export function CatalogPage() {
 
   return <PageContainer fluid className="catalog-page">
     <div className="catalog-surface catalog-surface-products">
-      <header className="catalog-command-deck catalog-command-deck-products">
-        <div className="catalog-command-main">
-          <span className="catalog-command-mark" aria-hidden="true"><ProductIcon /></span>
-          <div className="catalog-command-copy">
-            <span className="catalog-command-eyebrow">Catálogo / Productos</span>
-            <div className="catalog-command-title"><h1>Productos</h1></div>
-            <p>Define qué se controla por cantidad y qué se rastrea como activo individual.</p>
-          </div>
-        </div>
-        <CatalogSummary total={products.total} />
-      </header>
+      <ModuleHeader className="catalog-module-header" title="Productos" description="Administra los productos que alimentan tus operaciones de inventario." action={canManage && <Button onClick={() => { setProductForm({ id: '', name: '', sku: null, trackingMode: 'QUANTITY', lowStockThreshold: 0, active: true, updatedAt: '' }); setProductEditorOpen(true); }}><PlusIcon />Nuevo producto</Button>} />
       {error && <Alert variant="danger" icon={<AlertIcon />} className="mt-5" action={<Button variant="secondary" size="sm" onClick={() => void loadProducts()}>Reintentar</Button>}>{error}</Alert>}
       <div className="catalog-tab-panel" id="catalog-panel" role="region" aria-label="Productos del catálogo">
         <ProductList
@@ -145,13 +138,13 @@ export function CatalogPage() {
 }
 
 function CatalogTableHeader({ icon, children }: { icon: ReactNode; children: ReactNode }) { return <span className="catalog-table-header">{icon}{children}</span>; }
-function CatalogSummary({ total }: { total: number }) { return <div className="catalog-page-stats" aria-label="Resumen del catálogo"><span className="catalog-page-stat-primary"><small>Productos visibles</small><strong>{total}</strong></span><span className="catalog-page-stat-accent"><small>Seguimiento disponible</small><strong>2 modos</strong></span></div>; }
 
 function ProductList({ page, search, loading, loadingMore, loadError, canManage, activeFilter, onSearch, onResetSearch, onActiveFilterChange, onLoadMore, onCreate, onEdit, onToggle }: { page: Page<Product>; search: string; loading: boolean; loadingMore: boolean; loadError?: string; canManage: boolean; activeFilter: string; onSearch: (value: string) => void; onResetSearch: () => void; onActiveFilterChange: (value: string) => void; onLoadMore: () => void; onCreate: () => void; onEdit: (product: Product) => void; onToggle: (product: Product) => void }) {
   const columns: Array<DataTableColumn<Product>> = [
-    { key: 'name', mobileRole: 'identity', mobileLabel: 'Producto', header: <CatalogTableHeader icon={<ProductIcon />}>Producto</CatalogTableHeader>, className: 'catalog-col-identity', render: (product) => <CatalogIdentity icon={<ProductIcon />} name={product.name} updatedAt={product.updatedAt} secondary /> },
+    { key: 'name', mobileRole: 'identity', mobileLabel: 'Producto', header: <CatalogTableHeader icon={<ProductIcon />}>Producto</CatalogTableHeader>, className: 'catalog-col-identity', render: (product) => <div><CatalogIdentity icon={<ProductIcon />} name={product.name} updatedAt={product.updatedAt} secondary />{environment.inventoryMetadataV1 && productMetadataLabel(product) && <small className="inventory-product-metadata">{productMetadataLabel(product)}</small>}</div> },
     { key: 'tracking', mobileLabel: 'Seguimiento', header: <CatalogTableHeader icon={<QuantityTableIcon />}>Seguimiento</CatalogTableHeader>, className: 'catalog-col-tracking', render: (product) => <TrackingBadge mode={product.trackingMode} /> },
     { key: 'sku', mobileRole: 'full', mobileLabel: 'SKU', header: <CatalogTableHeader icon={<TagIcon />}>SKU</CatalogTableHeader>, className: 'catalog-col-sku', render: (product) => <OverflowText className="catalog-mono" text={product.sku || '—'} /> },
+    { key: 'threshold', mobileLabel: 'Umbral de stock', header: <CatalogTableHeader icon={<AlertIcon />}>Umbral</CatalogTableHeader>, className: 'catalog-col-threshold', render: (product) => product.lowStockThreshold > 0 ? <span className="catalog-threshold-value">{product.lowStockThreshold} uds.</span> : <span className="catalog-threshold-value catalog-threshold-empty">Sin alerta</span> },
     { key: 'status', mobileLabel: 'Estado', header: <CatalogTableHeader icon={<CheckIcon />}>Estado</CatalogTableHeader>, className: 'catalog-col-status', render: (product) => <StatusBadge active={product.active} /> },
     { key: 'actions', mobileRole: 'actions', mobileLabel: 'Acciones', header: <CatalogTableHeader icon={<EditIcon />}>Acciones</CatalogTableHeader>, className: 'catalog-table-actions catalog-col-actions', render: (product) => <RowActions active={product.active} canManage={canManage} name={product.name} onEdit={() => onEdit(product)} onToggle={() => onToggle(product)} /> }
   ];
@@ -159,9 +152,10 @@ function ProductList({ page, search, loading, loadingMore, loadError, canManage,
 }
 
 function CatalogList<Row extends { id: string }>({ search, onSearch, onResetSearch, onClearEmpty, canManage, onCreate, filters, page, loading, loadingMore, loadError, columns, onLoadMore, caption, emptySearch }: { search: string; onSearch: (value: string) => void; onResetSearch: () => void; onClearEmpty: () => void; canManage: boolean; onCreate: () => void; filters: ReactNode; page: Page<Row>; loading: boolean; loadingMore: boolean; loadError?: string; columns: Array<DataTableColumn<Row>>; onLoadMore: () => void; caption: string; emptySearch: boolean }) {
+  const searchInputId = useId();
   const inputRef = useRef<globalThis.HTMLInputElement>(null);
   const empty = <EmptyState icon={<SearchIcon />} title={emptySearch ? 'No encontramos coincidencias' : 'Todavía no hay productos'} description={emptySearch ? 'Prueba con otro nombre o SKU.' : 'Cuando se cree el primer producto aparecerá aquí.'} action={emptySearch ? <Button variant="secondary" size="sm" onClick={onClearEmpty}>Limpiar búsqueda</Button> : undefined} />;
-  return <section className="catalog-section catalog-section-product"><PageToolbar className="catalog-toolbar" actions={canManage ? <Button onClick={onCreate}><PlusIcon />Nuevo</Button> : undefined}><label className="catalog-search"><span>Buscar</span><span className="catalog-search-control"><SearchIcon /><input ref={inputRef} value={search} onChange={(event) => onSearch(event.target.value)} placeholder="Nombre o SKU" /><Button variant="ghost" size="sm" iconOnly className={`catalog-clear ${search ? 'catalog-clear-visible' : ''}`} aria-label="Limpiar búsqueda" tabIndex={search ? 0 : -1} onClick={() => { onResetSearch(); inputRef.current?.focus(); }}><CloseIcon /></Button></span></label><div className="catalog-filters">{filters}</div></PageToolbar><DataTable className="catalog-data-table" rows={page.items} columns={columns} getRowKey={(row) => row.id} caption={caption} error={page.items.length === 0 ? loadError : undefined} loading={loading} loadingRows={6} empty={empty} density="comfortable" /><LoadMore page={page} error={loadError} loading={loadingMore} onLoadMore={onLoadMore} /></section>;
+  return <section className="catalog-section catalog-section-product"><ModuleFilters className="catalog-toolbar" ariaLabel="Filtros de productos"><div className="catalog-search"><label htmlFor={searchInputId}>Buscar productos</label><span className="catalog-search-control"><SearchIcon /><input id={searchInputId} ref={inputRef} value={search} onChange={(event) => onSearch(event.target.value)} placeholder="Nombre o SKU" /><Button variant="ghost" size="sm" iconOnly className={`catalog-clear ${search ? 'catalog-clear-visible' : ''}`} aria-label="Limpiar búsqueda" tabIndex={search ? 0 : -1} onClick={() => { onResetSearch(); inputRef.current?.focus({ preventScroll: true }); }}><CloseIcon /></Button></span></div><div className="catalog-filters">{filters}</div></ModuleFilters><DataTable className="catalog-data-table" rows={page.items} columns={columns} getRowKey={(row) => row.id} caption={caption} error={page.items.length === 0 ? loadError : undefined} loading={loading} loadingRows={6} empty={empty} density="comfortable" /><LoadMore page={page} error={loadError} loading={loadingMore} onLoadMore={onLoadMore} /></section>;
 }
 
 function StatusFilter({ value, onChange }: { value: string; onChange: (value: string) => void }) { return <FilterSelect label="Estado" value={value} onChange={onChange} options={[{ value: 'true', label: 'Activos' }, { value: 'false', label: 'Inactivos' }]} emptyLabel="Todos" />; }
@@ -169,50 +163,66 @@ function FilterSelect({ label, value, onChange, options, emptyLabel }: { label: 
 function StatusBadge({ active }: { active: boolean }) { return <Badge className={active ? 'catalog-status-badge catalog-status-badge-active' : 'catalog-status-badge catalog-status-badge-inactive'} variant={active ? 'success' : 'neutral'}><span className="catalog-status-icon" aria-hidden="true">{active ? <CheckIcon /> : <CloseIcon />}</span>{active ? 'Activo' : 'Inactivo'}</Badge>; }
 function TrackingBadge({ mode }: { mode: Product['trackingMode'] }) { return <Badge className={`catalog-tracking-badge ${mode === 'ASSET' ? 'catalog-tracking-badge-asset' : 'catalog-tracking-badge-quantity'}`} variant={mode === 'ASSET' ? 'info' : 'default'}><span className="catalog-tracking-icon" aria-hidden="true">{mode === 'ASSET' ? <AssetTableIcon /> : <QuantityTableIcon />}</span>{mode === 'ASSET' ? 'Por activo' : 'Por cantidad'}</Badge>; }
 function CatalogIdentity({ icon, name, updatedAt, secondary = false }: { icon: ReactNode; name: string; updatedAt: string; secondary?: boolean }) { return <div className="catalog-name-cell"><span className={`catalog-row-icon ${secondary ? 'catalog-row-icon-secondary' : ''}`}>{icon}</span><span className="catalog-name-copy"><OverflowText as="strong" text={name} /><small>Actualizado {formatCompactDate(updatedAt)}</small></span></div>; }
-function RowActions({ active, canManage, name, onEdit, onToggle }: { active: boolean; canManage: boolean; name: string; onEdit: () => void; onToggle: () => void }) { if (!canManage) return <span className="catalog-muted catalog-read-only">Solo lectura</span>; return <div className="catalog-row-actions"><Button className="catalog-edit-action" variant="ghost" size="sm" onClick={onEdit}><EditIcon />Editar</Button><span className={`catalog-switch-action ${active ? 'catalog-switch-action-active' : ''}`}><span>{active ? 'Activo' : 'Inactivo'}</span><Switch checked={active} onCheckedChange={onToggle} aria-label={`${active ? 'Inactivar' : 'Activar'} ${name}`} title={`${active ? 'Inactivar' : 'Activar'} ${name}`} /></span></div>; }
+function RowActions({ active, canManage, name, onEdit, onToggle }: { active: boolean; canManage: boolean; name: string; onEdit: () => void; onToggle: () => void }) { if (!canManage) return <span className="catalog-muted catalog-read-only">Solo lectura</span>; return <div className="catalog-row-actions"><Button className="catalog-edit-action" variant="ghost" size="sm" onClick={onEdit}><EditIcon />Editar</Button><span className="catalog-switch-action"><Switch checked={active} onCheckedChange={onToggle} aria-label={`${active ? 'Inactivar' : 'Activar'} ${name}`} title={`${active ? 'Inactivar' : 'Activar'} ${name}`} /></span></div>; }
 
 function formatCompactDate(value: string) { if (!value) return '—'; return COMPACT_DATE_FORMATTER.format(new Date(value)); }
 
 function LoadMore({ page, loading, error, onLoadMore }: { page: Page<unknown>; loading: boolean; error?: string; onLoadMore: () => void }) {
-  const sentinelRef = useRef<globalThis.HTMLDivElement>(null);
-  useEffect(() => {
-    const sentinel = sentinelRef.current;
-    if (!sentinel || !page.hasMore || loading || error || !('IntersectionObserver' in globalThis)) return;
-    const observer = new globalThis.IntersectionObserver((entries) => { if (entries[0]?.isIntersecting) onLoadMore(); }, { rootMargin: '280px' });
-    observer.observe(sentinel);
-    return () => observer.disconnect();
-  }, [error, loading, onLoadMore, page.hasMore]);
-  return <><div ref={sentinelRef} className="catalog-scroll-sentinel" aria-hidden="true" /><ListFooter loaded={page.items.length} total={page.total} hasMore={page.hasMore} loading={loading} onLoadMore={onLoadMore} /></>;
+  return <ListFooter loaded={page.items.length} total={page.total} hasMore={page.hasMore} loading={loading} onLoadMore={onLoadMore} />;
 }
 
 function ProductEditor({ open, product, close, exited, saved }: { open: boolean; product: Product; close: () => void; exited: () => void; saved: (name: string) => void }) {
   const reportError = useRequestError();
-  const [form, setForm] = useState(() => ({ name: product.name, sku: product.sku ?? '', trackingMode: product.trackingMode, lowStockThreshold: String(product.lowStockThreshold) }));
-  const [errors, setErrors] = useState<Partial<Record<'name' | 'sku' | 'lowStockThreshold', string>>>({});
+  const [form, setForm] = useState(() => ({ name: product.name, sku: product.sku ?? '', trackingMode: product.trackingMode, lowStockThreshold: String(product.lowStockThreshold), equipmentType: product.equipmentType ?? '', brand: product.brand ?? '', model: product.model ?? '' }));
+  const [errors, setErrors] = useState<Partial<Record<'name' | 'sku' | 'trackingMode' | 'lowStockThreshold' | 'equipmentType' | 'brand' | 'model', string>>>({});
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const submitting = useRef(false);
   async function submit(event: FormEvent) {
     event.preventDefault();
+    if (submitting.current) return;
+    setError(null);
     const validation: typeof errors = {};
     if (!form.name.trim()) validation.name = 'Escribe un nombre para el producto.';
-    if (!Number.isInteger(Number(form.lowStockThreshold)) || Number(form.lowStockThreshold) < 0) validation.lowStockThreshold = 'Ingresa un número entero igual o mayor que cero.';
+    if (!form.lowStockThreshold.trim() || !Number.isInteger(Number(form.lowStockThreshold)) || Number(form.lowStockThreshold) < 0 || Number(form.lowStockThreshold) > 2147483647) validation.lowStockThreshold = 'Ingresa un entero entre 0 y 2.147.483.647.';
     setErrors(validation);
-    if (Object.keys(validation).length) return;
+    if (Object.keys(validation).length) {
+      globalThis.requestAnimationFrame(() => globalThis.document.querySelector<globalThis.HTMLElement>('#product-editor-form [aria-invalid="true"]')?.focus());
+      return;
+    }
+    submitting.current = true;
     setBusy(true);
     try {
       const token = await getCsrfToken();
-      const body = { name: form.name.trim(), sku: form.sku.trim() || null, trackingMode: form.trackingMode, lowStockThreshold: Number(form.lowStockThreshold) };
+      const body = { name: form.name.trim(), sku: form.sku.trim() || null, trackingMode: form.trackingMode, lowStockThreshold: Number(form.lowStockThreshold), ...(environment.inventoryMetadataV1 ? { equipmentType: form.equipmentType.trim() || null, brand: form.brand.trim() || null, model: form.model.trim() || null } : {}) };
       await apiRequest(product.id ? `/products/${product.id}` : '/products', { method: product.id ? 'PATCH' : 'POST', headers: { 'X-CSRF-Token': token }, body: JSON.stringify(body) });
       saved(form.name.trim());
     } catch (caughtError) {
-      reportError(caughtError, 'No se pudo guardar el producto');
+      setError(reportError(caughtError, 'No se pudo guardar el producto'));
       if (caughtError instanceof ApiRequestError && caughtError.code === 'CONFLICT') {
         const field = caughtError.message.toLowerCase().includes('sku') ? 'sku' : 'name';
         setErrors({ [field]: field === 'sku' ? 'Este SKU ya está registrado.' : 'Ya existe un producto con este nombre.' });
-      } else setErrors(getApiFieldErrors(caughtError, { name: 'name', sku: 'sku', lowStockThreshold: 'lowStockThreshold', trackingMode: 'trackingMode' }));
-      setBusy(false);
-    }
+      } else setErrors(getApiFieldErrors(caughtError, { name: 'name', sku: 'sku', lowStockThreshold: 'lowStockThreshold', trackingMode: 'trackingMode', equipmentType: 'equipmentType', brand: 'brand', model: 'model' }));
+    } finally { submitting.current = false; setBusy(false); }
   }
-  return <Dialog className="catalog-editor-dialog" open={open} onClose={close} onExited={exited} title={<span className="catalog-dialog-title"><span className="catalog-dialog-icon catalog-dialog-icon-product"><ProductIcon /></span>{product.id ? 'Editar producto' : 'Nuevo producto'}</span>} description="Define la identidad del producto y cómo se controlará dentro de Inventory TI." busy={busy} actions={<EditorActions formId="product-editor-form" close={close} busy={busy} />}><form id="product-editor-form" noValidate onSubmit={submit}><div className="space-y-5"><Field label="Nombre" required error={errors.name}><input value={form.name} onChange={(event) => { setForm({ ...form, name: event.target.value }); setErrors((current) => ({ ...current, name: undefined })); }} placeholder="Ej. Monitor 24 pulgadas" /></Field><div className="grid gap-5 sm:grid-cols-2"><Field label="SKU" hint="Opcional" error={errors.sku}><input value={form.sku} onChange={(event) => { setForm({ ...form, sku: event.target.value }); setErrors((current) => ({ ...current, sku: undefined })); }} placeholder="Ej. MON-24-001" /></Field><Field label="Umbral de stock" required error={errors.lowStockThreshold}><input type="number" min="0" step="1" value={form.lowStockThreshold} onChange={(event) => { setForm({ ...form, lowStockThreshold: event.target.value }); setErrors((current) => ({ ...current, lowStockThreshold: undefined })); }} /></Field></div><Field label="Seguimiento" required><Select className="catalog-editor-select" value={form.trackingMode} onChange={(trackingMode) => setForm({ ...form, trackingMode: trackingMode as Product['trackingMode'] })} options={[{ value: 'QUANTITY', label: 'Por cantidad' }, { value: 'ASSET', label: 'Por activo individual' }]} /></Field></div></form></Dialog>;
+  return <Dialog className="catalog-editor-dialog" open={open} onClose={close} onExited={exited} title={<span className="catalog-dialog-title"><span className="catalog-dialog-icon catalog-dialog-icon-product"><ProductIcon /></span>{product.id ? 'Editar producto' : 'Nuevo producto'}</span>} description="Define la identidad del producto y cómo se controlará dentro de Inventory TI." busy={busy} actions={<EditorActions formId="product-editor-form" close={close} busy={busy} />}>
+    <form id="product-editor-form" noValidate onSubmit={submit}>
+      {error && <Alert variant="danger">{error}</Alert>}
+      <div className="space-y-5">
+        <Field label="Nombre" required error={errors.name} disabled={busy}><input maxLength={160} value={form.name} onChange={(event) => { setForm({ ...form, name: event.target.value }); setErrors((current) => ({ ...current, name: undefined })); }} placeholder="Ej. Monitor 24 pulgadas" /></Field>
+        {environment.inventoryMetadataV1 && <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="Tipo de equipo" hint="Opcional" error={errors.equipmentType} disabled={busy}><input maxLength={100} value={form.equipmentType} onChange={(event) => { setForm({ ...form, equipmentType: event.target.value }); setErrors((current) => ({ ...current, equipmentType: undefined })); }} placeholder="Ej. Notebook" /></Field>
+          <Field label="Marca" hint="Opcional" error={errors.brand} disabled={busy}><input maxLength={100} value={form.brand} onChange={(event) => { setForm({ ...form, brand: event.target.value }); setErrors((current) => ({ ...current, brand: undefined })); }} placeholder="Ej. HP" /></Field>
+          <Field label="Modelo" hint="Opcional" error={errors.model} disabled={busy}><input maxLength={160} value={form.model} onChange={(event) => { setForm({ ...form, model: event.target.value }); setErrors((current) => ({ ...current, model: undefined })); }} placeholder="Ej. EliteBook 840 G8" /></Field>
+        </div>}
+        <div className="grid gap-5 sm:grid-cols-2">
+          <Field label="SKU" hint="Opcional" error={errors.sku} disabled={busy}><input maxLength={100} value={form.sku} onChange={(event) => { setForm({ ...form, sku: event.target.value }); setErrors((current) => ({ ...current, sku: undefined })); }} placeholder="Ej. MON-24-001" /></Field>
+          <Field label={form.trackingMode === 'ASSET' ? 'Mínimo de equipos disponibles' : 'Umbral de stock'} required error={errors.lowStockThreshold} disabled={busy} hint={form.trackingMode === 'ASSET' ? (environment.inventoryMetadataV1 ? 'Solo cuenta equipos en estado Disponible. Cero desactiva la alerta.' : 'La alerta de activos requiere habilitar la disponibilidad V1.') : 'Cero desactiva la alerta.'}><input type="number" min="0" max={2147483647} step="1" value={form.lowStockThreshold} onChange={(event) => { setForm({ ...form, lowStockThreshold: event.target.value }); setErrors((current) => ({ ...current, lowStockThreshold: undefined })); }} /></Field>
+        </div>
+        <Field label="Seguimiento" required error={errors.trackingMode} disabled={busy}><Select className="catalog-editor-select" value={form.trackingMode} onChange={(trackingMode) => setForm({ ...form, trackingMode: trackingMode as Product['trackingMode'] })} options={[{ value: 'QUANTITY', label: 'Por cantidad' }, { value: 'ASSET', label: 'Por activo individual' }]} /></Field>
+      </div>
+    </form>
+  </Dialog>;
 }
 
 function EditorActions({ formId, close, busy }: { formId: string; close: () => void; busy: boolean }) { return <><Button variant="secondary" onClick={close} disabled={busy}>Cancelar</Button><Button form={formId} type="submit" loading={busy}><CheckIcon />{busy ? 'Guardando…' : 'Guardar'}</Button></>; }

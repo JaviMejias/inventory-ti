@@ -13,15 +13,17 @@ type DialogProps = {
   className?: string;
   closeOnBackdrop?: boolean;
   onExited?: () => void;
+  initialFocus?: () => globalThis.HTMLElement | null;
 };
 
 const EXIT_DURATION = 180;
 
-export function Dialog({ open, onClose, title, description, children, actions, busy = false, className, closeOnBackdrop = true, onExited }: DialogProps) {
+export function Dialog({ open, onClose, title, description, children, actions, busy = false, className, closeOnBackdrop = true, onExited, initialFocus }: DialogProps) {
   const dialogRef = useRef<globalThis.HTMLDialogElement>(null);
   const previouslyFocused = useRef<globalThis.HTMLElement | null>(null);
   const previousPageScroll = useRef<{ left: number; top: number } | null>(null);
   const onExitedRef = useRef(onExited);
+  const initialFocusRef = useRef(initialFocus);
   const titleId = useId();
   const descriptionId = useId();
   const [rendered, setRendered] = useState(open);
@@ -35,6 +37,7 @@ export function Dialog({ open, onClose, title, description, children, actions, b
   }, []);
 
   useEffect(() => { onExitedRef.current = onExited; }, [onExited]);
+  useEffect(() => { initialFocusRef.current = initialFocus; }, [initialFocus]);
 
   useEffect(() => {
     if (open) {
@@ -64,7 +67,10 @@ export function Dialog({ open, onClose, title, description, children, actions, b
       dialog.showModal();
       globalThis.scrollTo({ ...previousPageScroll.current, behavior: 'instant' });
     }
-    const frame = globalThis.requestAnimationFrame(() => dialog.focus({ preventScroll: true }));
+    const frame = globalThis.requestAnimationFrame(() => {
+      const target = initialFocusRef.current?.();
+      (target?.isConnected && dialog.contains(target) ? target : dialog).focus({ preventScroll: true });
+    });
     return () => {
       globalThis.cancelAnimationFrame(frame);
       if (dialog.open) dialog.close();

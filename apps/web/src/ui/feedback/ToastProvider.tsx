@@ -126,6 +126,10 @@ function ToastItem({ toast, dismiss }: { toast: ToastRecord; dismiss: () => void
   }, [closing, dismiss]);
 
   useEffect(() => {
+    if (exitTimer.current !== null) {
+      globalThis.clearTimeout(exitTimer.current);
+      exitTimer.current = null;
+    }
     remainingTime.current = toast.duration ?? 0;
     setClosing(false);
     setPaused(false);
@@ -144,7 +148,7 @@ function ToastItem({ toast, dismiss }: { toast: ToastRecord; dismiss: () => void
   }, [beginClose, closing, paused, toast.duration, toast.version]);
 
   useEffect(() => () => {
-    if (exitTimer.current) globalThis.clearTimeout(exitTimer.current);
+    if (exitTimer.current !== null) globalThis.clearTimeout(exitTimer.current);
   }, []);
 
   function handleBlur(event: FocusEvent<globalThis.HTMLElement>) {

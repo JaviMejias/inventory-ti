@@ -14,9 +14,13 @@ type AlertProps = {
   role?: 'alert' | 'status';
 };
 
+const variantClasses: Record<AlertVariant, string> = {
+  info: 'ui-alert-info', success: 'ui-alert-success', warning: 'ui-alert-warning', danger: 'ui-alert-danger'
+};
+
 export function Alert({ variant = 'info', title, children, icon, action, className, role = variant === 'danger' ? 'alert' : 'status' }: AlertProps) {
   return (
-    <div className={cx('ui-alert', `ui-alert-${variant}`, className)} role={role}>
+    <div className={cx('ui-alert', variantClasses[variant], className)} role={role}>
       {icon && <span className="ui-alert-icon">{icon}</span>}
       <div className="ui-alert-content">
         {title && <strong>{title}</strong>}

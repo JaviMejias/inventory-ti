@@ -23,10 +23,10 @@ Materialized inventory / current stock
 InventoryMovements
 Corrections
 AuditLogs
-Notifications (where required)
+Sessions and ActivationCodes
 ```
 
-> `Office` is future extensibility, not an MVP entity schema. Repair management is future scope.
+> Roles are a fixed enum, not a separate table. Notifications, `Office` and repair management are future scope, not current tables.
 
 ## 2. Relationships
 
@@ -61,7 +61,7 @@ Correction
 - **Assignment** links **Asset** ↔ **Person** (a user/contact), with timestamps for begin/end, and full history rows.
 - **InventoryMovement** records the immutable history (see [inventory.md](../product/inventory.md) §4).
 - **Correction** references the original movement; when approved, produces a compensating movement (typically `ADJUSTMENT`).
-- **Correction** stores an explicit signed, non-zero `delta`; it is applied only when the request is approved.
+- **Correction** stores signed final `correctedQuantity` and non-zero compensating `delta` derived from the effective movement quantity. Stock changes only on approval (immediate and audited for new JEFE requests).
 
 ## 3. Immutable movements + materialized stock (ADR-3)
 
@@ -93,15 +93,18 @@ update materialized stock      ⇒  same transaction
 - **No direct stock edits**: there is no stock mutation endpoint; all changes originate in movement routes.
 - **Appropriate foreign keys**:
 
-  - `Asset.product_id → Product.id`
-  - `Assignment.asset_id → Asset.id`
-  - `InventoryMovement.product_id → Product.id`
-  - `InventoryMovement.asset_id → Asset.id` (nullable, asset-related movements)
-  - `InventoryMovement.user_id → User.id`
-  - `Correction.original_movement_id → InventoryMovement.id`
-  - `Correction.compensating_movement_id → InventoryMovement.id` (nullable, set on approval)
-- **ActivationCode.userId → User.id** (cascade on user removal; application policy still uses inactivation for historical users).
-  - `AuditLog.user_id → User.id` (nullable for system events)
+  - `Asset.productId → Product.id`
+  - `Assignment.assetId → Asset.id`
+  - `Assignment.personId → User.id` (nullable; `personName` retains the name snapshot)
+  - `Assignment.createdById / endedById → User.id`
+  - `InventoryMovement.productId → Product.id`
+  - `InventoryMovement.assetId → Asset.id` (nullable, retained schema relation; current asset operations do not create inventory movements)
+  - `InventoryMovement.performedById → User.id` (nullable for retained/system history)
+  - `CorrectionRequest.originalMovementId → InventoryMovement.id`
+  - `CorrectionRequest.compensatingMovementId → InventoryMovement.id` (nullable, set on approval)
+  - `CorrectionRequest.requestedById / reviewedById → User.id`
+  - `Session.userId / ActivationCode.userId → User.id` (cascade on user removal; application policy uses inactivation instead)
+  - `AuditLog.userId → User.id` (nullable for system events; `SET NULL` on user removal)
 
 - **Unique constraints where appropriate**:
 
@@ -117,7 +120,7 @@ update materialized stock      ⇒  same transaction
 - `Asset.assetTag` is globally unique when present.
 - `Asset(productId, serialNumber)` is unique when a serial number is present.
 - Asset rows reference `Product` with a restrictive foreign key.
-- Product tracking-mode and asset state-transition rules are application invariants centralized in the asset service.
+- Product tracking-mode changes are blocked after any stock row, movement or asset exists, by service-level product locks and the `0012_backend_integrity` trigger. Asset state transitions are validated by the asset service.
 - Asset mutations and corresponding audit entries are atomic.
 - Asset state is the current-state representation for asset-tracked products; `InventoryStock` remains exclusive to quantity tracking.
 - `Assignment.createdById` is required and `endedById` is required once an assignment is closed; historical user relations use restrictive foreign keys.
@@ -138,16 +141,18 @@ Indexes for common inventory/movement queries:
 - materialized stock by product;
 - assets by product and status.
 
-Clustered default ordering by `createdAt`/timestamp for history lists is recommended. The exact index set is finalised during implementation (see TBDs).
+Migration SQL also provides globally unique expression indexes on normalized names (`0009`) and nonblank SKUs (`0012`), plus a partial index for one pending correction per original (`0011`). Review migrations, not Prisma schema alone, for these protections.
+
+The schema and migration SQL are the source of truth for indexes; PostgreSQL tables are not automatically clustered by timestamp. Movement reads order by `effectiveAt`, and corrected history uses deterministic `effectiveAt`, `createdAt`, `id` ordering.
 
 ## 6. Monetary/quantity values
 
 - **Never use floating point** for monetary values; use integer-based representation (e.g., cents) or an exact decimal type.
-- Quantities are integers for discrete units; consumables use exact quantities (int).
+- Quantities use PostgreSQL signed 32-bit `INTEGER` (`-2147483648` to `2147483647`). Stock/thresholds must be nonnegative; movement-specific signs also apply. Backend validation rejects out-of-range inputs, and mutations reject stock overflow with `409 STOCK_LIMIT_EXCEEDED` before committing.
 
-## 7. Notifications
+## 7. Notifications (planned)
 
-Notifications required by the product (e.g., low-stock alerts, correction activity) are persisted where appropriate (see [structure.md](structure.md) modules and [workflows.md](../product/workflows.md)). Notification state is server-side.
+There is no Notification model/table or delivery worker today. Low-stock visibility uses stock/product thresholds; correction state and audits persist in their own tables. Future notification persistence must not be assumed from conceptual module descriptions.
 
 ## 8. Sensitive data
 

@@ -1,6 +1,6 @@
 import { createHash, createHmac, randomBytes } from 'node:crypto';
 import type { FastifyRequest, FastifyReply } from 'fastify';
-import type { PrismaClient, Role, User } from '@prisma/client';
+import type { Prisma, PrismaClient, Role, User } from '@prisma/client';
 
 import { environment } from '../config/env.js';
 import { ApiError } from '../lib/errors.js';
@@ -41,7 +41,7 @@ export async function authenticateRequest(request: FastifyRequest, database: Pri
     where: { tokenHash: hashToken(sessionToken) },
     include: { user: true }
   });
-  if (!session || session.expiresAt <= new Date() || !session.user.isActive) {
+  if (!session || session.expiresAt <= new Date() || !session.user.isActive || !session.user.passwordHash) {
     if (session) {
       await database.session.deleteMany({ where: { id: session.id } });
     }
@@ -85,7 +85,7 @@ export async function requireCsrf(request: FastifyRequest): Promise<void> {
   }
 }
 
-export async function createSession(database: PrismaClient, user: User): Promise<{ token: string; expiresAt: Date }> {
+export async function createSession(database: PrismaClient | Prisma.TransactionClient, user: User): Promise<{ token: string; expiresAt: Date }> {
   const token = randomBytes(32).toString('hex');
   const expiresAt = new Date(Date.now() + environment.SESSION_TTL_HOURS * 60 * 60 * 1000);
   await database.session.create({
@@ -108,8 +108,15 @@ export async function login(database: PrismaClient, identifier: string, password
     throw new ApiError(401, 'INVALID_CREDENTIALS', 'Invalid username/email or password');
   }
 
-  const session = await createSession(database, user);
-  return { user: toPublicUser(user), ...session };
+  return database.$transaction(async (transaction) => {
+    await transaction.$queryRaw`SELECT "id" FROM "User" WHERE "id" = ${user.id}::uuid FOR UPDATE`;
+    const current = await transaction.user.findUnique({ where: { id: user.id } });
+    if (!current || !current.isActive || !current.passwordHash || current.passwordHash !== user.passwordHash || (current.username !== identifier && current.email !== identifier)) {
+      throw new ApiError(401, 'INVALID_CREDENTIALS', 'Invalid username/email or password');
+    }
+    const session = await createSession(transaction, current);
+    return { user: toPublicUser(current), ...session };
+  });
 }
 
 export function csrfToken(request: FastifyRequest): string {

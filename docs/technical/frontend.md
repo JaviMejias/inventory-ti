@@ -1,105 +1,375 @@
 # Frontend
 
-This document defines the frontend architecture, conventions, and UX requirements.
+This document describes the implemented web application, not the complete future product scope. Product policy remains owned by [roles](../product/roles.md) and the API; frontend visibility is not an authorization boundary.
 
-Related documents:
+Related documentation:
 
-- [architecture.md](architecture.md) — system context.
-- [structure.md](structure.md) — monorepo layout and feature organization.
-- [pwa.md](pwa.md) — PWA behavior.
-- [realtime.md](realtime.md) — WebSocket consumption model.
-- [security.md](security.md) — session and CSRF handling in the browser.
-- [decisions.md](decisions.md) — ADR-5, ADR-6.
+- [Design context](../../DESIGN.md) and [UX contract](../../UX-CONTRACT.md) — shared appearance and interaction owners.
+- [Structure](structure.md) — source organization.
+- [Frontend verification](testing.md#frontend-verification) — automated coverage and browser checks.
+- [Spanish user guide](../user-guide/es/README.md) — instructions for every implemented screen.
 
-## 1. Stack
+## 1. Stack and implementation status
 
-```text
-React
-Vite
-TypeScript (strict mode)
-Tailwind CSS
-```
+| Area | Current implementation |
+| --- | --- |
+| Rendering | React 19 and strict TypeScript. |
+| Tooling | Vite 6, Tailwind CSS 3. |
+| Routing | React Router DOM 7, declarative `BrowserRouter`. |
+| Charts | Recharts 3. |
+| Calendar | React DayPicker 10 and date-fns 4, wrapped by the shared DatePicker. |
+| Language | Spanish operational UI. English/Spanish translation stubs exist, but no working language selector or complete bilingual UI. |
+| Theme | Light, dark, or system; system is the initial default. |
+| Data | REST requests through `src/lib/api.ts`; no active WebSocket refresh subscription. |
 
-- i18n: UI text translatable between **Spanish and English**.
-- Icons: Lucide-style icons; subtle motion where appropriate. Animations are never required for functionality.
-- Prefers `reduced-motion` (user preference).
+PWA/offline support, reports/export screens, direct binary XLSX upload and realtime transport remain planned. The review workspace does accept a complete extractor JSON file through the explicit intake flow described below. Design documents do not imply other features are available.
 
-## 2. Architecture
+## 2. Routes and ownership
 
-- **Feature-based organization** (see [structure.md](structure.md) §4).
-- Reusable **UI primitives** for consistent building blocks.
-- App infrastructure (i18n, theme, router, data fetching, websocket client) lives separate from features.
-- Strict TypeScript; no `any`.
+| Route | Current owner | Purpose |
+| --- | --- | --- |
+| `/` | `features/home/HomePage.tsx` | Dashboard consultation and drill-down. |
+| `/catalog` | `features/home/CatalogPage.tsx` | Products; management controls for JEFE. |
+| `/inventory` | `features/home/InventoryPage.tsx` | Quantity stock and trackable assets, including history and assignments. |
+| `/inventory/imports` | `features/imports/ImportReviewPage.tsx` | JEFE-only V4 review workspace, including explicit extractor-JSON intake. Independent V5–V19 gates control the implemented pilot, source, evidence, history and grouping workflows described below; all are false by default. Current consultations, administrative decisions and actual applications remain distinct. No direct binary XLSX upload. |
+| `/corrections` | `features/home/CorrectionsPage.tsx` | Requests, direct JEFE application and review. |
+| `/users` | `features/admin/UsersPage.tsx` | JEFE-only user administration. Other roles receive a forbidden state. |
+| `/account` | `features/auth/AccountPage.tsx` | Personal details and password. |
 
-## 3. UI primitives
+Authentication, activation and session context live in `features/auth/auth.tsx`. An unauthenticated visitor sees sign-in rather than an operational route. Unknown authenticated routes show a not-found state.
 
-Current implementation uses standard HTML elements with Tailwind CSS styling. Shared UI primitives are planned:
+`App.tsx` loads authenticated screens lazily. `AppLayout` retains navigation and theme controls while Suspense or RouteErrorBoundary displays a localized loading/error state in the content area. View transitions respect navigation direction and reduced motion.
 
-```text
-PageShell              ✅ Implemented (layout wrapper)
-Button                 ✅ Implemented (standard button elements)
-Input                  ✅ Implemented (standard input elements)
-Dialog / Modal         ✅ Implemented (custom Dialog component with keyboard/focus management)
-NumberInput            Planned
-CurrencyInput          Planned
-RutInput               Planned
-Select                 Planned
-SearchableSelect       Planned
-DatePicker             Planned
-Switch                 Planned
-Drawer                 Planned
-Table                  Planned (used inline in pages)
-Pagination             Planned
-Badge                  Planned (status badges rendered inline)
-Toast                  Planned
-EmptyState             Planned
-```
+Dashboard is a **consultation view**, not a separately implemented business module or dedicated aggregation endpoint. It composes existing product, stock, asset, movement and correction reads. The architecture diagram already describes this distinction.
 
-### 3.1 NumberInput
+### Unresolved Dashboard access policy
 
-- Controlled **text input** with numeric validation.
-- Do **not** rely on browser-native number controls if they produce undesirable arrows/behavior.
+The product [permission matrix](../product/roles.md) denies Dashboard access to SOPORTE, while current frontend navigation exposes Inicio to every authenticated role and the route has no role guard. This is an unresolved policy/implementation discrepancy, **not a documented grant of permission**. Decide whether to restrict the view or amend the product policy before claiming role coverage is complete. This documentation update changes neither permissions nor backend behavior.
 
-### 3.2 CurrencyInput
+## 3. Shared UI and responsive behavior
 
-- Displays Chilean-style formatting: `1.250.000`.
-- Stores a **normalized numeric value**.
-- **Never use floating point** for monetary values (integers/cents or equivalent). See also [database.md](database.md) and [decisions.md](decisions.md).
+| Capability | Implemented owner |
+| --- | --- |
+| Buttons, labels and form fields | `ui/primitives/Button.tsx`, `Field.tsx`; native inputs inside Field. |
+| Fixed and searchable selects | `ui/primitives/Select.tsx`. |
+| Calendar | `ui/primitives/DatePicker.tsx`, shared by Inicio and Corrections. |
+| State controls and badges | `Switch.tsx`, `Badge.tsx`, feature-owned semantic status variants. |
+| Truncated values | `OverflowText.tsx`: full text on hover/focus; wrapping in responsive cards. |
+| Page geometry | `ui/layout/PageContainer.tsx`, `PageHeader.tsx`, `PageToolbar.tsx`. |
+| Tables and list navigation | `ui/data/DataTable.tsx`, `ListFooter.tsx`, `Pagination.tsx`. Inventory native tables share the responsive CSS contract. |
+| Modal and confirmation | `ui/overlays/Dialog.tsx`, `ConfirmDialog.tsx`. |
+| Feedback | Alert, loading/table skeletons, animated EmptyState, InlineStatus and ToastProvider. |
 
-### 3.3 RutInput
+Dedicated NumberInput, CurrencyInput, RutInput and general Drawer primitives are not implemented. The Corrections filter drawer is a feature-owned interaction, not a reusable Drawer component.
 
-- Displays Chilean RUT formatting: `13.558.459-2`.
-- Stores a **normalized representation**.
-- Validate **on frontend and backend** (backend is authoritative).
+Searchable Select filters the **provided options locally**, with eight matching options by default and guidance to refine the query. It does not independently fetch or paginate remote entities. Small fixed sets use the simple variant. Popups attach to the active dialog or document, measure their trigger, handle viewport collisions and remeasure after dialog entrance animation.
 
-### 3.4 SearchableSelect
+DatePicker accepts required or optional values; empty/invalid dates do not reach DateTimeFormat. Month/year selection changes the calendar without closing it. Only the inner select closes. Both consuming views use the same month/year layout and shared control styles.
 
-For large datasets:
+Dialogs keep long bodies scrollable internally, retain footer actions, animate entrance/exit, restore trigger focus without scrolling the list and block closure while a mutation is busy. Native-dialog top-layer behavior and portal positioning are part of the shared contract.
 
-- debounce search;
-- query the backend;
-- **do not load the entire dataset** unnecessarily.
+Theme preference is stored as `inventory-ti-theme`. System mode follows `prefers-color-scheme`; explicit light/dark choices persist on authentication and authenticated pages. Brand yellow identifies actions and highlights; semantic success, warning, information and danger colors remain distinct.
 
-## 4. UX requirements
+Below **1024 CSS pixels**, navigation becomes a fixed icon-only bottom bar with accessible names and safe-area clearance. Tables reflow into labeled cards with wrapping identity and accessible actions. At 1024px and above they retain desktop tables. This depends on viewport width, not physical screen height or the label “720p”. Reduced-motion preferences reduce decorative movement.
 
-The application must support:
+## 4. Dataset loading, filtering and navigation
 
-- **Spanish and English** — all UI text translatable; technical identifiers/code stay in English.
-- **Light and dark themes.**
-- **Responsive layout.**
-- **Accessibility** and keyboard navigation where appropriate.
-- **Reduced-motion preferences.**
-- **Loading, error, and empty states** throughout.
-- **Form validation** consistent with backend rules.
+These mechanisms are deliberately distinguished; incremental rendering is not necessarily server pagination.
 
-State-changing requests on forms must include the CSRF token (see [security.md](security.md) §5). Error messages reflect backend structured errors where user-facing.
+| Dataset | Fetching | Presentation |
+| --- | --- | --- |
+| Catalog products | Server pages of 25 with filters/search. | Scroll-triggered next page and explicit load-more recovery. |
+| Users | Server pages of 25 with search. | Incremental rows/cards and load-more. |
+| Corrections | Server pages of 25 with filters/search. | Scroll within 500px of the document end triggers another page; injected deep-link records do not advance the server offset. No explicit next-page button is rendered. |
+| Inventory stock/assets | All required product pages plus complete stock/asset reads. | Local search/filter; reveal 25 records at a time per tab. |
+| Quantity history | Full corrected response, chronological original records. | Reveal 12 events at a time; compensations have a separate 12-record disclosure. |
+| Asset history | Full received response, newest first; each source read is capped at 200 rows by the API. | Reveal 12 events at a time; this does not page older server sources. |
+| Dashboard pending-correction modal | All pending pages loaded for counts/detail. | Reveal 25 records at a time with a button. |
+| Dashboard asset-state/stock-alert modals | Matching records from the dashboard snapshot. | Full matching list; no server pagination. |
+| Assignment dialog | Reads up to 50 assignment records. | Displays the returned assignment history; no next-page control. |
 
-## 5. Data & realtime consumption
+Remote list search is debounced by 300ms and stale responses must not replace the active query. Users additionally handles input composition and cancels superseded requests. Inventory and Select searches are local. Filters generally belong to their screen; not every filter is persisted in the URL.
 
-- REST is the authoritative data path (see [architecture.md](architecture.md)).
-- WebSocket events refresh open views; on reconnect the client **resyncs via REST** (see [realtime.md](realtime.md)).
-- Role awareness in the UI is a **UX convenience only**; the backend enforces permission (ADR-5).
+Supported drill-downs:
 
-## 6. Reports
+- `/inventory?product=<name>`: from low-stock alerts; searches quantity stock and highlights the referenced product.
+- `/catalog?product=<name>`: from an asset-state detail; searches the product catalog, not an individual asset editor.
+- `/corrections?search=<product-name>&correctionId=<id>`: searches the table, retrieves the correction if needed and opens its detail. The detail target is consumed after opening, while the table search remains. The row is accessible in the list, but there is no distinct selected-row highlight.
 
-- Report screens offer the shared filter set and generate PDF/XLSX via the shared report data layer (see [reports.md](../product/reports.md) and ADR-8).
+Catalog and Inventory manage products and individual assets without categories or user-managed storage locations. There is one stock context, not a location selector.
+
+## 5. Dashboard data semantics
+
+Default period: the first day of the current month through today, using the Chile calendar. Options include current month, last 30 days, previous month and custom range. Date-only boundaries use `America/Santiago`, including daylight-saving transitions.
+
+**Dates filter movements only.** Active products, current stock, active assets, low-stock alerts and pending corrections are current snapshots, not historical balances at the selected end date. KPI recalculation animations do not change that meaning.
+
+- Active products: active product records, not asset instances.
+- Stock available: quantity stock units returned by the stock read, not available asset count.
+- Trackable assets: active individual asset records, including non-available states.
+- Stock alerts: active QUANTITY products with a positive threshold and stock at or below that threshold.
+- Trend: inbound/outbound volumes, bucketed daily up to 31 days, weekly up to 217 days, then monthly.
+- Registered movements chart: absolute unit volumes for inbound, outbound and adjustments, **not number of movement records**. INITIAL/ENTRY/RETURN are inbound; EXIT is outbound; ADJUSTMENT contributes to adjustment volume.
+- Charts read immutable audit quantities from `/inventory/movements`, not corrected quantities from the running-history endpoint. Compensating adjustments appear on their own effective dates; previous entry/exit volumes are not rewritten after a correction.
+- Asset distribution: current active assets by state. Segment/status clicks open matching assets, with a product-catalog drill-down.
+- Attention required: first five matching products, with stock/minimum/coverage and a modal for the complete matching list. Current source order is retained; priority sorting is not guaranteed.
+- Pending corrections: first four requests, a complete detail-list modal and links to the matching Corrections row/detail. Visibility still follows the API's role-scoped result.
+
+## 6. Requests, errors and mutations
+
+All feature requests use `src/lib/api.ts`. The fallback API base is `http://localhost:3000`; the supplied web `.env.example` explicitly selects `/api`. Vite proxies that path to port 3000 in development. Production requires an equivalent reverse proxy or an explicit public API URL; the development proxy is not bundled.
+
+Sessions use browser credentials; state-changing requests include the session CSRF token. Shared error translation maps domain codes, HTTP failures and connection failures to safe Spanish copy. Intentional cancellation is not presented as a user error; expired sessions return to authentication, while invalid login credentials remain a form error.
+
+`useRequestError` publishes a persistent error toast and returns the same message for inline form feedback. Values and open confirmations survive a failed mutation. Assignment/status/account/review confirmations retain a general inline alert. Creation/editing in Corrections, Catalog, Users and Inventory asset/movement editors uses mapped field feedback and a toast, without retaining a general inline dialog alert for every failure. Some mappings, such as adjustment reason, do not reach a displayed Field error. These are remaining differences from the shared UX contract, not complete inline coverage.
+
+Failed initial reads have retry states, not false empty tables; failed incremental reads preserve loaded rows and pause automatic loading until retry/filter change. Corrections offers a page-level retry, which restarts the first page rather than retrying just the failed next page. Its scroll-only next-page trigger also needs a user scroll event; there is no explicit next-page button when the first page fits the viewport. Failed dashboard reads never confirm zero metrics.
+
+ToastProvider keeps at most four visible notifications, deduplicates within two seconds, expires success/info/warning after five seconds and keeps errors until dismissal. Hover/focus pauses expiration. Refreshing a duplicate cancels an old exit timer. A connected manual-popover host inside the active native dialog keeps toasts visible and operable above modals.
+
+Success feedback follows the server response. A network failure can leave an operation's result **unknown**: refresh before repeating a stock-changing request. The client does not invent history entries or guarantee realtime synchronization.
+
+## 7. Verification and remaining scope
+
+See [Frontend verification](testing.md#frontend-verification) for the current Node regression suites and browser checklist. These tests do not establish complete browser, keyboard, visual or assistive-technology coverage.
+
+Remaining explicit issues: resolve Dashboard access for SOPORTE; reconcile activation entry, failed-login password clearing, generic inline form errors, tracking-lock guidance and nullable contact editing; add Corrections next-page/retry controls; extend bounded/full-read history navigation if scale warrants it; add browser regression coverage. The evidence and classification are recorded below. Reports, realtime and offline/PWA remain separate planned work, not promised capabilities of the current UI.
+
+## 8. API contract reconciliation
+
+Cross-check date: **2026-10-03**. Sources: [backend API reference](backend.md#10-api-endpoints-current-implementation), [corrections contract](corrections.md), [account lifecycle](../deployment/users.md), current frontend callers and the request/response boundary schemas. This is a repository-based comparison, not a live deployment, migration or end-to-end verification. Backend documents and implementation were not changed.
+
+### Compatible calls and meanings
+
+| Frontend flow | API contract consumed | Important distinction |
+| --- | --- | --- |
+| Sign-in / session | `POST /auth/login` with identifier/password; `GET /auth/me`. | Cookie session, not a token stored in localStorage. Invalid credentials/current password are exempt from the global session-expired event. |
+| Password activation | `POST /auth/activate` with identifier/code/password/confirmation. | Public endpoint, one-use 24-hour code, password 12–128 characters with ASCII letter/digit; success requires a separate login. |
+| User administration | JEFE `/users` create/edit and activate/deactivate/reset-access routes, with CSRF for mutations. | Create/reset returns the raw code only once; `isActive` and password readiness are different states. Reset does not reactivate an inactive user. |
+| Personal account | `PATCH /auth/me` with displayName/email/phone; `POST /auth/password` with currentPassword/newPassword. | Own username/role are not editable; contact can be cleared with `null`; password change preserves this session and revokes others. |
+| Catalog | `/products` list and JEFE create/edit/state mutations. | Names/nonblank SKUs are trimmed and globally case-insensitively unique. Any stock row, even zero, movement or asset locks tracking-mode changes. |
+| Quantity movement | `POST /inventory/movements/<type>` with productId/quantity/reason. | INITIAL/ENTRY/EXIT/RETURN send positive magnitudes; only ADJUSTMENT sends a signed nonzero delta and requires reason. |
+| Asset metadata / state | `/assets` create; `PATCH /assets/:id` identifiers; `POST /assets/:id/status` with status. | Editing does not send a new productId. Assignment/decommission are not ordinary status destinations; destination options depend on role. |
+| Assign / return | `POST /assets/:id/assignments` with `personName`; dedicated return route. | Free-text recipient, no required account or personId. Return ends the assignment and makes the asset AVAILABLE without changing quantity stock. |
+| Correction create / review | Signed `correctedQuantity` plus reason to the original movement; JEFE approve/reject endpoints. | UI magnitude is converted to signed effect; backend computes delta. JEFE creation auto-applies; other roles create pending requests. All non-JEFE list/detail reads are requester-scoped. |
+| Quantity history / asset history | `/inventory/products/:id/history` versus `/assets/:id/history`. | Corrected chronological balances versus newest-first asset lifecycle events; quantity compensation records are separately disclosed, never counted twice. |
+
+The frontend does not send the legacy correction `delta` or use `/assignment-users` to populate its current assignment form. Legacy API compatibility is not a requirement to restore those older UI flows. Normal EXIT audit magnitude can be positive while its corrected signed effect is negative; this is representation, not a contract conflict.
+
+### Confirmed presentation limitations and gaps
+
+- **Activation entry:** LoginPage only exposes Configurar contraseña after `ACCOUNT_PENDING`, yet submitting login requires a nonempty password. A first-time user with a code needs an independent activation entry. The public activation API already exists; a temporary/invented password is not a documented workaround.
+- **Invalid credentials:** LoginPage retains the password on failure. The UX contract requires clearing it; the Spanish guide now describes the actual gap rather than claiming it is implemented.
+- **Tracking lock feedback:** ProductEditor permits selecting either mode on edit, and the API correctly rejects used-product changes. `getApiErrorMessage` has no specific `PRODUCT_TRACKING_MODE_LOCKED` branch, so the response uses generic save-error copy. The API rule is not missing.
+- **Nullable contact editing:** UserEditor requires email/phone for both create and edit; the backend PATCH schemas allow `null`. Mi cuenta can clear these fields. New-user creation still correctly requires contact information.
+- **Error placement:** Generic failures in the editors identified in section 6 have persistent toasts but lack a retained general inline alert. Inventory ADJUSTMENT requires reason server-side although its current field is not marked required and its reason-error mapping is not rendered.
+- **Dataset navigation:** Catalog/Users/Corrections request server pages of 25; full-product aggregation uses pages of 100. Inventory reveals 25 local records; history reveals 12 local events. Asset history reads at most 200 rows per source (movements, assignments, asset audits), which can expand into more timeline events. Assignment detail reads 50 rows without next-page UI. These are not unlimited server-paginated histories. Corrections still needs an explicit next-page/retry control.
+- **Current versus historical data:** Dashboard uses immutable movement volumes, including compensations, while quantity history applies corrected effects at original movement dates. Stock/asset KPIs are current snapshots. Low-stock presentation excludes nonpositive thresholds; the generic product formula alone does not describe this frontend rule.
+
+### Documentation and policy disagreements outside this edit scope
+
+1. **SOPORTE Dashboard access:** the product matrix excludes it while current App routes/navigation expose it. This remains the decision described in section 2; no permission was amended to hide the conflict.
+2. **Registered assignment recipient:** [product Assets](../product/assets.md#41-the-relationship) and the Phase 6B assignment paragraph in [Security](security.md#2-authorization) still require an existing active user. Current InventoryPage sends `personName`; `assignments-schemas.ts` accepts it without personId, while the old personId path validates a registered user when used. [Database](database.md) already documents nullable personId/name snapshots. The stricter paragraphs are legacy documentation for that alternate path, not a reason to require a User for the current free-text flow.
+3. **Separate Assets screen:** product Assets still mentions the old Assets-screen assignment panel. Current registered routes integrate asset actions into Inventory; retained AssetsPage/AssignmentPanel files are not navigation destinations.
+
+The backend/product document owners should reconcile points 2–3 in their own scope. The frontend guides are aligned with the current boundary contracts and explicitly link to these unresolved documentary differences instead of silently altering backend documentation.
+
+## 9. Historical evidence consultation and capture by batch (V9)
+
+`features/imports/HistoryEvidencePanel.tsx` adds two explicit consultations inside the existing JEFE/V4 batch workspace: documentary preview and immutable capture receipts. `VITE_INVENTORY_IMPORT_HISTORY_V9=true` enables them independently of operational pilot planning/application; it remains false by default. The [V9 API contract](../planning/excel-mda/contrato-api-v9.md) and current server/schema deployment, including 0019 and its prerequisites, must be verified before activation. This client does not enable flags, run migrations or capture real data during fixture QA.
+
+- GET `history-preview?limit=25&offset=…`, GET `history-captures?limit=25&offset=…`, GET `history-captures/:captureId`, and POST `history-captures` are batch-scoped under `/inventory/imports/batches/:id`. No upload, operational CRUD or invented cross-batch lookup.
+- `history-evidence-api.ts` validates scope (`HISTORICAL_EVIDENCE_ONLY`, `affectsCurrentState:false`, `canApply:false`), owner, pagination, provenance, date precision and complete receipts. Original/interpretation/snapshot remain distinct. PostgreSQL JSON property ordering does not affect receipt validation.
+- Preview/receipts use real pages of 25 and shared Pagination. Selection is explicitly 1–25 observations from one preview page; switching consultation preserves selection, while page replacement asks before discarding. Failed reads preserve rows and disable preparation. An increased receipt count during paging requires restarting from zero to avoid silently skipping captures.
+- `HistoryCaptureDialog` re-reads the current preview before collecting authorized links, reason, evidence reference and documentary-only confirmation. No link is auto-selected. Unknown dates are not input defaults or converted instants; separate ticket/OT/purchase references remain in source evidence. A source identity issue does not prevent saving explicitly unlinked documentary evidence.
+- `useHistoryCapture` freezes strict identifiers and one UUID/body with batch version/source revision/preview fingerprint. Deadline is thirty seconds through CSRF and POST; synchronous duplicate prevention, no optimistic success or automatic retry. Unknown/5xx/invalid-response/busy/uniqueness-conflict outcomes retain exact intent and a visible recovery key. Known conflicts preserve draft and demand refresh/reconfirmation; changed or captured observations remain visible until explicitly reviewed/removed.
+- Confirmed capture stays open as a read-only original receipt while the preview refreshes. Capture actor/time are not the historical executor/date. Existing source observations cannot be captured again even from another batch of the same source. Cross-batch stored references disclose their receipt ID without guessing a batch route.
+- Owners use the existing Catalog Dialog/Select/Field/DataTable/Badge/Alert/Toast system and existing themes; no new dependencies or CSS token changes. Close/Escape/document exit disclose draft loss; internal declarative-router Back remains unguarded and no private evidence is stored in localStorage.
+
+Asset consultation is integrated in section 10. Remaining separate work: V10/V11 closed historical assignments, V12 append-only amendment actions, historical retirement UI, batch-creation choice, scale/continuity and actual deployment/pilot verification. Batch receipt reads show original captured evidence, not current amended asset evidence.
+
+## 10. Current imported evidence in asset history
+
+`features/imports/AssetImportedEvidence.tsx` is mounted inside Inventory's existing asset-history dialog, keyed by asset ID and guarded by the existing V9 flag. Unlike batch review, authenticated asset reads do not require JEFE or V4. Archived assets retain this read-only access without ordinary edit/assignment/status actions.
+
+- Explicit Consult starts GET `/assets/:id/imported-evidence?limit=25&offset=…`; no automatic batch/amendment/receipt lookup or write. `history-evidence-api.ts` reuses the V9 guards and additionally checks the requested asset, snapshot/header equality, current version and immutable captured fields from [V12](../planning/excel-mda/contrato-api-v12.md).
+- A current snapshot may reflect an amendment or later/replaced asset link. Show current date/link/source revision/version/amendment separately from captured date/link/source revision and original capture metadata. Source cells remain inspectable, but the asset DTO does not contain a full original captured interpretation after amendment; the client does not invent it.
+- Real offset pages of 25 replace the document list, ordered by server capture time, not historical effective day or amendment time. No cross-page snapshot guarantee exists. Refresh starts at zero; failures retain prior rows, indicate unconfirmed freshness and retry the failed offset. Empty later pages after relinking can restart safely. Unknown dates and historical actors are never substituted with current values.
+- `useHistoryRead` provides synchronous duplicate prevention and cancellation; transport has a thirty-second deadline. Hide/close/context replacement invalidates previous reads. Reopening begins a fresh first-page consultation. Documentary disclosures follow the existing capture-detail pattern across the full modal width; shared Pagination, Alert, Badge, Button and dialog scroll/focus behavior are preserved.
+- Documentary records never change event counts, quantities, availability, status, assignment or history. No new dependencies, tokens, endpoints or persisted browser evidence. Current backend/schema deployment must be verified before activation, including V9/V12 prerequisites and V14/0022 when running the current server. No migration or real data operation was performed.
+
+Verification on 2026-10-05: 127/127 frontend tests, scoped ESLint, typecheck and default/enabled builds pass. Isolated Chromium fixture QA covered desktop/mobile, light/dark/system, reduced motion, 25→2 paging, retained rows/retry, initial error vs empty, later-page shrink/restart, slow-read cancellation, asset replacement, long notes, archived reads, focus restoration and V9=false exclusion. Zero real writes; no unexpected API requests or application errors. Runtime was Node26.7.0/pnpm11.19.0, not the supported Node24; deployment-runtime verification remains pending. React Doctor full retains 77 global warnings, with none reported for the new asset evidence component; strict/no-write audit retains the pre-existing 71 findings. No standalone frontend a11y/l10n command exists, so these checks do not claim exhaustive accessibility, cross-browser or 200% zoom coverage.
+
+## 11. Closed historical assignment planning (V10)
+
+`ClosedAssignmentPlanDialog` is a JEFE-only asset-dock action, also available on archived assets without ordinary editing/assignment/status actions. Independent `VITE_INVENTORY_IMPORT_ASSIGNMENT_PLAN_V10` is false by default and does not require client V4/V9 or authorize V11 application. Deploy/verify the current [V10](../planning/excel-mda/contrato-api-v10.md)/[V12](../planning/excel-mda/contrato-api-v12.md) API/schema prerequisites, including later requirements of the running server, before enabling.
+
+- UI deliberately prepares one period per draft; API can accept up to25. Two persisted linked observations are selected explicitly from real pages of25, retaining selections across pages. No automatic reconstruction, cross-batch lookup, upload or fabricated endpoint. Source snapshots originally consulted are labeled separately from the sources/versions contrasted by the resulting plan.
+- Exact historical instants use a named app-owned typed ISO variant, not a native picker or the operational calendar's2020+ range. Require real dates from1900, seconds, at most millisecond precision and explicit offset/Z. Preserve entered day/offset for the server's source-day check. Null planning facts remain null and produce visible blockers; do not default returnStatus to AVAILABLE or historical actors to the current user.
+- `closed-assignment-api.ts` calls only POST `/assets/:id/imported-assignment-plan` after explicit confirmation, with CSRF and30s deadline. Checks owner, normalized request, scope/mode/unpersisted/no-current-effect, `mda-closed-assignment-plan-2`, V12 versions, sources, nullable actors/proposal, blockers/warnings and summary. It is a read-only POST, not an idempotent application or executable assignments DTO.
+- `useClosedAssignmentPlan` prevents duplicate concurrent planning, aborts/invalidates old reads, retains draft/previous result on errors and never automatically retries. Field changes, acknowledgement or explicit source refresh invalidates the result. Warning IDs are recognized individually and require renewed confirmation/generation; source/blocker checks remain authoritative. Presentation pages25, acknowledgement limit1000 distinct IDs, no hidden truncation or force.
+- Shared Dialog owns bounded body/footer, focus and animation; generating focuses the result, discard asks and document exit warns. Internal declarative-router Back remains unguarded. No private evidence or application intent is persisted in browser storage. Select's animated close no longer steals focus from another control/result; SourceFields shares the source-label owner with plan disclosures.
+
+Verification on2026-10-05:139/139 frontend tests, scoped ESLint, typecheck and enabled/default builds. Isolated Chromium fixtures exercised blocked/valid/regenerated plans, individual acknowledgement, missing/invalid dates, source paging/retry, conflict preservation, duplicate submit, cancelled slow read, archive/roles/flags, mobile bounds and shared DatePicker regression. No real writes/migrations/imports. Node26.7.0/pnpm11.19.0, not supported Node24; deployment verification pending. Doctor changed65/100 with10 warnings (unchanged baseline); full remains62/100 with global/complexity/heuristic warnings. Strict/no-write audit73 findings (19 authored-Select JSX ownership false positives,54 architecture HTML); no global report/config changes. This is not full accessibility/localization/platform/zoom coverage.
+
+Next: V11 application with independent confirmation, frozen request UUID/body, explicit uncertain-result recovery, immutable receipts and imported-assignment/timeline provenance. V12 amendment actions, historical retirement, administrative/web batch-creation choice and actual deployment/pilot remain separate. Preparing a valid plan does not save history or alter stock/state.
+
+## 12. Closed historical assignment application and receipts (V11)
+
+Independent false-by-default `VITE_INVENTORY_IMPORT_ASSIGNMENT_APPLY_V11` gates permanent application (JEFE plus V10) and lazy receipt consultation (JEFE, independent of V10/V4/V9). Verify the current [V11 contract](../planning/excel-mda/contrato-api-v11.md), V12 rules2 projection and running server/schema prerequisites before activation. No deployment flags, migrations or real data writes were performed.
+
+- `closed-application-model/api` serialize only normalized planning input and strict APPLY_CLOSED_ASSIGNMENT_HISTORY scope. POST /assets/:id/imported-assignment-plan/apply uses CSRF and a single30s deadline. Success/recovery validate owner, actor, request UUID, plan, immutable period snapshots and raw closed assignments, including null historical actors, exact references/notes and capture timestamps.
+- `useClosedApplication` synchronously gates double activation and stale callbacks after success/known conflict. One memory-only UUID/body survives uncertain network/5xx/invalid/busy outcomes. Explicit recovery sends identical intent; no automatic retry, operational CRUD fallback or aborted-write rollback claim. Known conflict requires a freshly reviewed plan and independent confirmation.
+- `ClosedAssignmentPlanDialog` owns the permanent confirmation stage (typed APLICAR HISTORIA, safe Back initial focus), pending close lock, uncertain-close warning, original receipt and focused result. Fields lock while applying/uncertain. Closing uncertain state loses in-memory intent and cannot undo server commit; beforeunload warns. Internal Back/auth transitions remain a recovery gap; nothing private is persisted in browser storage.
+- `AssetClosedApplications` mounts on explicit consultation in the existing asset history dialog, including archived assets. GET list25 and scoped detail; retained rows/retry, empty distinct from error, changing totals require restart, cancellation and owner-keyed detail. Receipt focus is restored to its initiating row on close. Immutable applied details reuse a named readonly V10 variant with bounded warning presentation.
+- Imported assignment/timeline DTOs present effective history separately from recording time/user/receipt. Historical executors remain unknown; recording user is not assigned as the old executor. No current-state/stock/assignment refresh is inferred from history application.
+- Listing accepts rules1/2 metadata; detail/write recovery deliberately require complete rules2 snapshots. Legacy rules1 receipts currently fail visibly rather than upgrade fingerprints. Readonly legacy compatibility remains pending if such receipts exist in deployed data.
+- Shared Alert and Badge now map variants to literal Tailwind-detectable classes: dynamic interpolation previously purged semantic colors. Canonical owners fixed, no CSS/token fork.
+
+Verification2026-10-05:151/151 frontend tests, scoped ESLint/typecheck, flags-enabled/default builds; isolated desktop/mobile light/dark/system/reduced-motion fixtures covered independent confirmation, conflict, lost-commit exact recovery/double activation, receipt25/2 error/empty/focus, roles and archive. No real writes or migrations. Runtime Node26.7.0/pnpm11.19.0 needs repetition on supported Node24. Doctor changed66/100/10 warnings, full63/100/82 global warnings; strict/no-write audit73 unchanged findings. These checks are not exhaustive a11y/localization/platform/zoom certification.
+
+Next: V12 amendment actions, V13/V14 historical retirement, legacy compatibility, administrative/web creation decision, durable navigation recovery, scale and real deployment/pilot verification.
+
+## 13. Append-only documentary amendments (V12)
+
+`EvidenceAmendmentDialog` is accessed from a stored batch-preview observation or original capture receipt. `VITE_INVENTORY_IMPORT_EVIDENCE_AMENDMENTS_V12=true` gates all entry controls/mounting; it stays false by default. This entry requires JEFE and the existing V4/V9 batch surface, but not V5/V6/V7/V8/V10/V11. Verify the [V12 API contract](../planning/excel-mda/contrato-api-v12.md), migration0021 and all prerequisites of the deployed server before activation. No .env/deployment change, migration or real amendment was performed.
+
+- `evidence-amendment-model/api` define documentary-only DTOs. Explicit POST `/inventory/imports/evidence/:id/amendment-plan` sends only `{assetId:uuid|null}`. Saving POST `…/amendments` sends stable UUID, plan fingerprint, expected evidence/batch/source versions, explicit null-or-UUID, reason, evidence reference and `AMEND_HISTORICAL_EVIDENCE_ONLY`. Both use CSRF and30s deadlines; no client snapshot/date/actor/state mutation or operational endpoint fallback.
+- Boundaries validate scope/no-current-effect, ownership/provenance, immutable original cells, nullable date/link semantics, proposal, current version, previous version, real25 metadata pages and adjacent chain IDs. Writes/recovery additionally bind actor, UUID, expected versions, references and exact frozen proposal. Detail reads are scoped by evidence/event ID and independent of the latest head. Incompatible responses fail visibly rather than show success/empty history.
+- Original v0, current consulted interpretation and server proposal remain distinct. A link is an explicit choice; current-link selection becomes a fixed UUID, and manually entered UUID is not authorization. Server-approved identity/pilot basis remains necessary. V7/V8 origin review/redecision is a prerequisite when source identity changed; no client engine guesses dates, historical executors or corrected origin. Blockers including consumption START/END/RETIREMENT prevent saving; unrecognized blockers retain a safe explanation and code.
+- `useEvidenceAmendment` keeps an actor-bound UUID/body/proposal in memory across uncertain outcomes, prevents concurrent/obsolete submissions and ignores detached completion. No automatic write retry or false rollback claim. Known conflict drops write authority without discarding caller inputs; fresh explicit planning plus renewed independent confirmation is required.
+- Original receipts are read-only. Saving appends a documentary event and leaves operational stock/status/assignments alone. A recovered receipt may predate a newer head; its detail remains visible while an explicit separate consultation reads what is current. No implicit operational refresh or replacement of current data with an old recovery event.
+- Descending25/2 paging uses `useHistoryRead`; failures retain rows, focus inline recovery and retry the failed offset. Changed head/version while paging requires restart. Read-only detail is inline within the existing Dialog, receives focus and restores its row button. Capture-receipt handoff waits for exit before opening versions, including unlinked/unmapped observations; no nested modal or guessed batch route for cross-batch captures.
+- Shared Dialog/Field/Select/Pagination/DataTable/HistoryEvidenceDetails/feedback reuse Catalog ownership. A mobile QA exposed canonical Alert's nonwrapping actions collapsing message width to0; shared styles now wrap text/actions and maintain44px action targets. No new dependencies, visual tokens or local component kit. Dirty/uncertain close and beforeunload warn; internal Back/session transition remains a memory-only recovery limitation.
+
+Verification2026-10-05:164/164 frontend tests (13 new:7 model/API,5 async-hook,1 shared-alert regression), scoped ESLint/typecheck, all-import-flags-enabled and default production builds. Isolated Chromium fixtures covered desktop1280×800/mobile375×667, light/dark/system/reduced-motion,25→2/error/retry/head-change/empty, original receipt handoff, consumed evidence, invalid UUID with0POST, independent confirmation, retained conflict draft, identical uncertain recovery and old v28 receipt versus current v29. Other roles/V12=false produced0restricted controls/reads. Pending Escape retained the modal; uncertain close warned and focused the safe action without another POST. Mobile dialog337×635, body335px with matching scroll width, actions44px inside viewport; shared Alert text253px/actions44px replaces the0px-width failure. No real cookies, writes, operational endpoints or application exceptions; expected simulated HTTP/network failures and QA-script/HMR restarts are not runtime certification.
+
+Supported runtime remains Node24; checks used available Node26.7.0/pnpm11.19.0 and need repetition before deployment. Doctor changed67/100/10 existing warnings versus baseline66/100/10; full63/100/83 retains global debt and one new complexity warning. Strict/no-write audit74 findings:20 authored-Select JSX ownership false positives (new Dialog imports the canonical `ui` Select, exported from `ui/primitives/Select`) and54 architecture HTML findings out of scope. Local evidence kept under ignored output/playwright, without overwriting global report/config. Not exhaustive a11y/localization/other-platform/200%-zoom certification.
+
+Next: V13/V14 historical retirement UI; legacy closed-history compatibility, batch creation/upload choice, durable navigation recovery, scale and real deployment/pilot verification remain pending.
+
+## 14. Historical retirement preparation (V13)
+
+`RetirementPlanDialog` is integrated in Inventory's asset action dock, including archived assets without ordinary edit/status/assign actions. `VITE_INVENTORY_IMPORT_RETIREMENT_PLAN_V13=true` is independently false by default and requires JEFE, not client V4/V9/V10/V11/V12. Deploy and verify the current [V13 contract](../planning/excel-mda/contrato-api-v13.md), V12 projection and running server/schema prerequisites, includingV14/0022 and later prerequisites, before enabling. No .env, server/shared contract, dependency, schema or operational data changes.
+
+- `retirement-plan-model/api` sends only strict V13 input to explicit POST `/assets/:id/imported-retirement-plan`, with CSRF and30s deadline. Response guards bind owner, normalized intent, rules/scope/false effect flags, consulted asset/product, evidence/source versions and provenance, proposal, null historical actor, warnings/blockers and counts. The consulted-asset guard is exported from the existing closed-assignment API owner, not reimplemented. No client business compiler or generated fingerprint.
+- The single selected linked retirement observation can come from either server page; other kinds never appear as choices. `useHistoryRead` preserves page/selection on failure and retries the requested offset. Explicit refresh starts at zero, invalidates planning and requires renewed review. Evidence selections describe the consultation, while plan disclosures describe the version actually checked by the server.
+- Reuses V10's typed exact historical-instant validator, preserving entered local day/offset. Missing optional instant/proof sends null for visible blockers; no default date/calendar inference. Receipt day is separate from retirement proposal, and documentary effectiveDay remains null/UNKNOWN. Current revisor is not the historical executor.
+- `useRetirementPlan` synchronously prevents duplicate reads, clones request input, cancels obsolete/closed reads, ignores late unmounted completions and retains previous results explicitly stale on error. There is no automatic planning POST, write, recovery key or operational fallback. One read-only review confirmation, not a V14 application confirmation.
+- `RetirementPlanDetails` presents all source blockers (no V10 context exception), human-readable warning labels and original codes/IDs. Blockers/warnings page25; recognition max1000 unique IDs. Individual acknowledgement invalidates/reconfirms planning; obsolete IDs require explicit removal. The result owner is keyed by planId so new plans reset their presentation pages.
+- Uses Catalog's canonical dialog/fields/selects/pagination/alerts/badges/source disclosure and theme tokens without CSS/dependency changes. Dirty discard and document exit warn; result/error focus remains within the bounded modal body, closing restores the asset action. Internal declarative-router Back/session change retains the documented continuity gap; no private storage.
+
+Verification2026-10-05:175/175 frontend tests, including11 new DTO/API/async/presentation regressions; scoped ESLint and typecheck passed. Default and V13-enabled production builds passed; isolated Chromium with dummy API fixtures covered desktop1280×800/mobile375×667, light/dark/system/reduced-motion, valid/blocked/null/impossible dates, exact acknowledgements,25→2/503/retry/retained selection, planning conflict/error preservation, slow cancellation/discard/focus, archive, roles and disabled flag. Mobile dialog337×635/body335px with matching scrollWidth,44px actions inside viewport; authored Select285px trigger/popup with1px alignment. Compared with Catalog index/editor. No real cookies/writes, operational POSTs or application exceptions. Expected simulated HTTP failures and a QA assertion wording correction/HMR reload are not deployment evidence.
+
+Checks ran on available Node26.7.0/pnpm11.19.0, not supported Node24; repeat before deployment. Doctor changed67/100/10 existing warnings (unchanged); full64/100/87 warnings retains global debt/new complexity and shared-Field heuristics, not a clean diagnostic. Strict/no-write audit76 findings:22 false authored-Select JSX ownership attributions and54 architecture HTML findings outside this change. Local audit/screenshot evidence under ignored output/playwright; global audit/config left untouched. No project-owned standalone a11y/l10n/Storybook runner, exhaustive platform or200% zoom certification.
+
+Continuation: V14 terminal application is implemented below. Legacy compatibility, batch creation/upload choice, durable navigation recovery, scale and real deployment/pilot remain pending.
+
+## 15. Historical retirement application and receipts (V14)
+
+Implemented2026-10-25 against the [V14 contract](../planning/excel-mda/contrato-api-v14.md). `VITE_INVENTORY_IMPORT_RETIREMENT_APPLY_V14` remains false by default. Applying requires JEFE/V13/V14; receipt consultation requires only JEFE/V14, independently of the preparation and import-review flags. No .env, API, Prisma, dependencies, shared contracts or operational data were changed. Verify deployment prerequisites through0022 and all later migrations required by the current server before activation.
+
+- `retirement-application-model/api` owns strict original-input intents, cloned/deep-frozen actor-bound UUID/body, CSRF and one30s deadline, parent-scoped metadata pages25 and immutable detail. Guards validate plan/evidence/version/provenance, exact terminal result, dates, current recorder and POST recovery response. Response snapshots are never resubmitted as plan input; no business-rule compiler or operational fallback.
+- `useRetirementApplication` prevents synchronous double submission and stale callback reuse. Known rejection requires an explicitly regenerated/reviewed plan. Network/timeout/5xx/incompatible success retains the same intent for explicit recovery, locks draft editing and does not claim rollback. Late unmounted completions cannot publish success. Recovery remains memory-only and actor/asset ownership is keyed by the parent.
+- `RetirementPlanDialog` adds a separate confirmation stage only for a fresh complete V13 plan. Safe Back focus, typed DAR DE BAJA, explicit permanent consequences, busy close protection, Spanish inline errors/toasts, uncertain-close warning and beforeunload reuse the canonical owners. Preparation still has all false effect flags; final submission is a distinct V14 action. Returning to review restores keyboard focus.
+- `RetirementApplicationDetails` reuses `RetirementPlanDetails` in applied/read-only mode, with truthful persisted labels, no editable acknowledgement and working warning pagination. Historical retirement, capture and recorder remain separate; unknown historical actor/source date are not fabricated. Inventory immediately merges only the validated terminal server result before authoritative reload. Asset history lazily mounts `AssetRetirementApplications`, with real metadata pagination, retry, retained stale page, focused detail and row-focus restoration. Imported non-assignment timeline events separately show capture time.
+
+Verification on supported Node24.22.0:194/194 frontend tests (19 new V14 API/model/hook/presentation regressions), scoped ESLint, TypeScript and enabled/default production builds passed. Final build has feature flags disabled. Isolated Chromium fixtures verified complete/blocked preparation, separate typed confirmation, rejected plan/new review, synchronous double click, committed-but-lost response and identical recovery, archived receipt/detail/error/retry, keyboard focus and mobile375×667 dark/system/reduced-motion. Mobile dialog337×635, scroll body335px without horizontal overflow and footer inside viewport. No operational API forwarding or real data writes; fixture success is not deployment evidence.
+
+React Doctor changed68/100 with10 existing warnings (baseline67/100); full64/100 with87 warnings, including complexity/shared-Field heuristics, is not a clean whole-app result. Strict read-only audit retains76 findings from authored Select attribution and architecture HTML; global audit/config preserved. No exhaustive platform, assistive-technology or200% zoom certification. Memory-only internal navigation/session continuity, legacy receipts, scale and a real deployment/pilot remain pending. Next frontend increment: V15 read-only reconciliation of unknown retirement dates/existing terminals; later backend V16–V34 contracts are not implied by this delivery.
+
+## 16. Retirement reconciliation consultation (V15)
+
+Implemented2026-10-25 against the [V15 contract](../planning/excel-mda/contrato-api-v15.md). `VITE_INVENTORY_IMPORT_RETIREMENT_RECONCILIATION_V15` is independently false by default and JEFE-only. The action is available for operational/archived assets without requiring V13/V14. Deployment prerequisites include0022 and all subsequent requirements of the actual running backend; fixture verification does not establish deployment readiness. No backend, schema, dependency, .env, shared contract or real-data changes.
+
+- `retirement-reconciliation-model/api` defines strict read-only response contexts and sends only evidenceId to explicit POST `/assets/:id/imported-retirement-reconciliation`, with CSRF and one30s deadline. Reuses the existing asset guard and shared retirement source/warning guards. The named diagnostic source variant preserves other original observation kinds; V13 remains strict. V15 independently validates recorded terminal dates without imposing V13's1900 lower bound, so an inconsistent early date can be reported rather than disguised as a transport error. No client classification compiler or generated assessment fingerprint.
+- Guards bind parent/evidence, false effect flags, source/version/provenance, nullable historical facts and safe exact relative links. Selected-asset receipt and evidence-consumption receipt have separate ownership checks; metadata excludes private plan/result/proofs. Never execute returned routes automatically or navigate a browser to a POST endpoint.
+- `useRetirementReconciliation` consults explicitly, synchronously prevents duplicate requests, cancels invalidated/closed reads, ignores late responses, and retains a previous assessment as stale on error. No automatic retry or idempotency key is needed for this diagnostic. `RetirementReconciliationDialog/Details` reuse canonical Catalog owners; evidence pages25 preserve deliberate selection across pages/errors, and diagnostics/warnings independently page25. They expose nine readable classifications, original source uncertainty, current retirement, custody/use conflicts, related receipts and next steps. A receipt serving both contexts is shown once; other-asset consumption stays visibly separate.
+- Parent `InventoryPage` hands an explicit chosen observation to V13 only after the consultation exits. The new optional `initialEvidence` seeds selection, never date/proof/confirmation, planning or application. A fresh matching current-asset receipt reuses the existing `RetirementReceipt` inline with V14 enabled; its shared reader now echoes errors through the modal toast and brings focused results/errors into view. V13/V14 off hides those continuations without disabling V15. Reconciliation close needs no discard warning because it never saves anything.
+
+Verification on Node24.22.0:209/209 frontend tests, including15 new V15 API/hook/presentation regressions; TypeScript, scoped ESLint and enabled/default builds passed. Isolated Chromium with synthetic intercepted APIs covered nine classifications, explicit/duplicate reads, evidence25→2 with503/retry/retained selection, stale diagnostics, safe V13 handoff without auto POST, related receipt/error/toast/retry/focus, other-asset ownership, early recorded date, diagnostics/warnings25→2, slow cancellation and malformed responses. Mobile375×667 light/dark/system/reduced-motion:337×635 dialog,335px body without horizontal overflow, actions within viewport;285px Select/popup with1px alignment, Escape closes only the list. Archive, SOPORTE/COORDINADOR denial, independent V15 and disabled V15 verified. No operational API forwarding, real writes or migration commands.
+
+React Doctor changed68/100/10 existing warnings; full65/100/90 warnings includes two new template-complexity warnings and one loading-reset heuristic in the cancellation-aware hook, reviewed against passing async tests. These are not suppressed or a whole-app clean result. Strict audit77 findings:23 authored-Select/native attribution false positives (one new shared Select consumer) and54 existing architecture-HTML findings. Global reports/config and DESIGN.md preserved. No exhaustive platform, assistive-technology or200% zoom certification. Continuation: V16 is implemented below; V17–V34, durable navigation/session recovery, legacy compatibility, scale and real deployment/pilot remain separate work.
+
+## 17. Physical identity grouping plans (V16)
+
+Implemented2026-10-25 against the [V16 contract](../planning/excel-mda/contrato-api-v16.md). `VITE_INVENTORY_IMPORT_IDENTITY_GROUPS_V16` remains false by default. JEFE plus V4 are required for the batch workspace; V7/V8 and the other frontend flags are independent. Verify the currently deployed API/schema, including reservations introduced after V16, before enabling. No backend, Prisma, shared contract, dependency, .env or operational data changes.
+
+- `IdentityGroupPanel` lazily opens the canonical Catalog Dialog with the immutable original batch snapshot. `IdentityGroupScopePicker` searches/pages25 over the already loaded original candidates, selects only complete compatible physical candidates and caps the total at25 observations. No partial candidate, implicit selection or client grouping inference.
+- `identity-group-model` validates explicit scope, unique temporary group UUIDs, exact row coverage, verified text/explicit absence, per-group references, rationale and simulation review. `IdentityGroupEditor` keeps manual inputs separate from source/current evidence. Removing a group leaves its rows unassigned. Changing scope warns before clearing groups/membership and retains the rationale. Group numbering is stable across server UUID normalization; UUID allocation occurs outside React state updaters.
+- `identity-group-api` sends only the strict normalized original-ID request to POST `/inventory/imports/batches/:id/identity-group-plan`, with CSRF and one30s deadline. Context reads cross-check batch/source versions and original snapshot identity. Response guards bind scope/versions/hash/request, all false effect flags, original and proposed membership, identity-cell changes, counts, diagnostics and metadata ownership. They preserve blocked unrealizable simulations, repeated simulated candidates across groups, cross-batch evidence revisions and explicit null current links. Shared source-cell validation is reused; `OriginalCells.showRowAddress=false` avoids inventing Excel addresses for field-keyed identity evidence. There is no client rule compiler or generated scenario fingerprint.
+- `useIdentityGroupPlan` prevents synchronous duplicate requests and stale callback reuse, aborts obsolete/closed reads and ignores late responses. Explicit source refresh invalidates results and clears consent; version conflict prevents resubmission until a coherent fresh context arrives. Failed requests preserve the draft and last result as stale. Shared safe Spanish errors produce inline and modal-visible toast feedback without private server messages.
+- `IdentityGroupPlanDetails` presents the four operation kinds, complete/blocked validation, next-workflow guidance, bounded existing matches with full totals, original/current/simulated identities and previous evidence/decisions/pilot metadata. Larger sections page25. Simulated IDs are not assets; a successful scenario does not approve an import or persist lineage. No V8 handoff, apply/save action, warning consent, idempotency key or operational fallback exists in this increment.
+- Dialog close/scope changes warn before discarding; safe-choice focus, first invalid field/error/result focus and trigger restoration use existing owners. Distinct footer actions prevent React from reusing a button as a submit control during scope/edit transitions. beforeunload warns, but the existing internal-navigation/session recovery gap remains; no private evidence is stored in browser storage.
+
+Verification:230/230 frontend tests on Node24.22.0 (21 new:10 model/API,5 hook,6 presentation), scoped ESLint, TypeScript and production builds with all flags enabled/disabled. Final artifacts have flags disabled. Eight checked-in synthetic fixtures come from the existing backend's pure offline simulator, without API/DB access or backend edits. Isolated Chromium intercepted every API request and covered all four operations, numeric raw/format preservation, unrealizable/coordinated scenarios,10-of12 ambiguity, cross-batch evidence, explicit/double submission, edit-without-submit, version conflicts/refresh/reconfirmation, reservation errors, incompatible responses, incomplete coverage, context failures/retry, slow cancellation and complete candidate selection with25→2 pages.
+
+Mobile375×667 light/dark/system/reduced-motion:337×635 dialog,335px body without horizontal overflow, actions within the viewport,251px Select/popup with matching width; Escape closes only the list. SOPORTE/COORDINADOR and disabled V16 issue no restricted grouping queries. Catalog index comparison uses the same owners. Local screenshots/scripts are ignored under output/playwright; fixtures are not deployed integration evidence.
+
+At320×667, maximum-length identifiers/references/rationale and all result details expanded retain280px clientWidth/scrollWidth and a footer within y650. Existing fluid utility containers constrain intrinsic Select/detail widths without changing shared CSS. Short visible row labels retain specific accessible names.
+
+React Doctor changed69/100 with10 existing warnings; full65/100 with93 warnings, including new template complexity, cancellation/loading heuristic and a shared-Field false positive. No suppressions or global configuration changes. Strict audit79 findings:25 authored-Select/native attribution false positives and54 preexisting architecture-HTML findings; global report and DESIGN.md preserved. No exhaustive platform, assistive-technology or200% zoom certification. Continuation: V17 is implemented below; later grouping application/history/document workflows, durable navigation/session continuity, legacy compatibility, scale and real deployment/pilot remain pending.
+
+## 18. Administrative grouping reviews and reservations (V17)
+
+Implemented2026-10-26 against the [V17 contract](../planning/excel-mda/contrato-api-v17.md). `VITE_INVENTORY_IMPORT_IDENTITY_GROUP_REVIEWS_V17` remains false by default. JEFE/V4 are required; new reservations additionally require a fresh complete V16 scenario, but receipt consultation is independent of V16. Check the deployed API/schema, including0023 and any later running-server requirements, before activation. No backend, Prisma, .env, dependencies, shared contract or real-data changes.
+
+- `identity-group-review-model/api` define exact reserve/release intents and strict metadata/detail guards. A reservation freezes only requestId, reviewed planId, confirmation and the normalized V16 request; a release freezes its independent requestId, confirmation and trimmed reason. Input is detached before awaiting CSRF; each request has one30s deadline. Server fingerprints remain opaque: no client rule compiler, request digest or scenario hash is invented.
+- Receipts bind batch, source hash/version, original candidate/record coverage, group membership, archived identity-cell snapshots, administrative actor/key and release event. Reservation flags must agree with the release. The historically read-only V16 plan remains unchanged inside a saved administrative receipt. Recovery accepts a matching original reservation receipt that has since been canceled, without reactivation. Release responses cannot rewrite the original plan, provenance or recorder. Metadata pages contain no plan/rows and enforce real25-item bounds, totals, uniqueness and owner scope.
+- `useIdentityGroupReviewMutation` separately freezes one actor-bound intent per reserve/release flow, prevents synchronous duplicate requests/stale callback reuse, and publishes success only after full receipt validation. Network/5xx/incompatible success/busy/conflict retain the same key/body for explicit recovery; known rejection requires renewed review. Parent components are keyed by actor/batch/receipt, and unmounted completions cannot publish success. Writes are not canceled as though that would undo a transaction.
+- `IdentityGroupPlanDialog` adds a distinct typed RESERVAR stage behind V17, with scope/consequences, safe Back focus, busy close protection, inline/toast errors and uncertain-close warning. Editing or moving between stages cannot submit. A successful reserve shows its saved receipt; the archived variant of `IdentityGroupPlanDetails` prevents misleading Sin guardar labels. V16 without V17 keeps simulation only.
+- `IdentityGroupReviewsDialog` lazily consults real metadata pages25 and selected parent-bound detail. Read errors retain old content, focus feedback and show a modal-visible toast; changed page totals require restart. List offset/internal scroll and row focus survive detail navigation. `IdentityGroupReviewDetails` separates administrative creation, original reviewer, current reservation and immutable release reason/time/actor. The read-only scenario is an archived context, not current approval.
+- An active receipt exposes a distinct typed CANCELAR stage with mandatory reason. Success updates the existing list row from the validated release receipt. Known conflict requires explicit current-state consultation; uncertain completion offers only identical recovery. No direct isReserved edit, optimistic release, application, reactivation, V18 projection or older operational importer fallback.
+- Canonical `Dialog.initialFocus` is an optional connected-descendant resolver for remounted list return. The default remains dialog focus; invalid/outside destinations fall back to the dialog, and cleanup cancels its pending frame. This resolves a browser-discovered focus race without timers in the screen or changes to unrelated default focus behavior. Existing components/tokens/styles own responsive cards, fields, loaders, errors and motion.
+
+Verification:250 frontend tests (20 new:8 API/model,5 async hook,3 receipt presentation,4 shared Dialog focus), supported Node24.22.0; strict TypeScript, scoped ESLint and enabled/default production builds. V17 fixtures are synthetic storage envelopes following the inspected backend serializer around existing offline V16 fixtures, not database integration. Isolated Chromium intercepts all API requests: real25→2 pages, original row focus, distinct typed confirmation, synchronous double clicks, busy Escape protection, save/release receipts, lost responses with identical recovery bodies, recovered canceled reservations, scenario conflict/new key, malformed successful response, retained list/detail failures and explicit retry.
+
+Mobile375×667 dark/system/reduced motion:337×635 dialog,335px body without overflow, footer within y650;251px shared Select/popup and Escape closes only the list. At320×667, a2000-character cancellation reason and all archived details expanded retain280px clientWidth/scrollWidth, actions within y650. Explicit light/empty, Catalog comparison, JEFE-only access, V17 consultation with V16 off, and V17 disabled with a complete V16 scenario were verified. No production cookies, operational API forwarding or real writes; final build flags remain disabled.
+
+React Doctor changed69/100/10 existing warnings; full66/100/94 warnings, including one new complex receipt-flow template. No suppressions/config changes or claim of a clean whole-app scan. Strict read-only audit79 findings remains unchanged:25 authored-Select attribution false positives and54 architecture-HTML findings. DESIGN.md/global audit and parallel work are preserved. Internal navigation/session intent continuity, legacy compatibility, scale, creation/upload choice and real deployment/pilot remain pending. Next frontend increment: V18 effective group projection; later decisions/application/history/document workflows throughV34 remain separate.
+
+## 19. Completion of earlier contracts (2026-10-26)
+
+The [V1–V17 coverage ledger](../planning/excel-mda/frontend-coverage-v1-v17.md) supersedes the earlier creation/legacy/multi-period gap list. Prior dated verification reports remain historical. Flags remain false by default; no backend, Prisma, dependency, global configuration or operative database changes were made.
+
+`WorkbookIntakeDialog` and its model/API/hook complete V3 JSON comparison and V4 administrative creation using the existing V4 gate. The strict extractor envelope retains complete original rows/cells, source identity and published limits. Preview validates source, row coverage, flags and counters. Save binds the full source and reviewed previewId, including the16MiB wrapper limit. An unknown result freezes the exact request for explicit recovery; known conflicts invalidate confirmation and require a new preview. Reused batches retain their original creator/time and possibly later version. `ImportPreviewTables` is the existing renderer extracted for reuse, with local modal filters and25-row load-more; no new table or design system.
+
+V10/V11 now support1–25 independent drafts, globally unique endpoints, confirmed removal, cross-page selection and per-period validation/results. Every change invalidates the complete plan. A distinct typed confirmation shows every proposed period and submits/retries the whole set once. Result-period pagination is keyed by both plan and period. Application/cancellation hooks reject callbacks after unmount. V11 rules1 snapshots use separate archived types/guards/presentation; they never become current write input. Pilot product reads normalize the API's `active` field into its internal `isActive` snapshot. V6 `mda-pilot-1` receipts likewise use `pilot-receipt-api` and `PilotApplicationReader`, preserving omitted V7 fields rather than inventing them; current application validation stays separate.
+
+`AssignmentHistoryProvenance` and `AssignmentEventProvenance` consume current original/effective/correction/group DTOs in assignment and timeline readers. They separate historical instants/executors from import/correction capture and compare only the timeline endpoint actually supplied. The three adjacent historical source/receipt sections now have unique React keys; browser verification exposed duplicate controls from their previously identical asset key.
+
+Verification:317 frontend tests, strict TypeScript and scoped ESLint passed. Tests include immutable intake recovery, wrapper size, all1–25-period sizes, cross-period endpoint reuse, period pagination, legacy V6/V11 compatibility and effective/original provenance. Enabled/default production builds passed; final flags remain false. React Doctor changed70/100 with10 prior warnings; final full67/100 with99 warnings, including bounded lookup/complexity heuristics reviewed against code/tests. These are not claims of a clean whole-app audit. Strict audit80 findings:26 authored-Select/native attribution false positives and54 preexisting architecture-HTML findings; reports were written under `/tmp`, preserving global reports/DESIGN.md.
+
+Real integration used a private PostgreSQL18/API and synthetic Juan Pérez QA data. It verified V3/V4 preview/create/dedup/read, V9 capture, blocked two-period application with zero partial results, successful V11 two-period atomic application, identical recovery, altered-body rejection and receipt/assignment/timeline reads without changing current stock/asset state. The current pilot-context reader also returned both active ASSET products from the real catalogue DTO while excluding its QUANTITY product. Firefox drove the actual UI/API without API interception: JSON preview/save/open batch; invalid-source/no-confirmation no-write checks; local filters, Select/Escape and discard focus; two-period editing/application with double-click single write;25-period draft limit/removal; current receipts and eight timeline events after the two integration applications. Desktop1280×800, mobile375×667/320×667, light/dark/system/reduced motion and Catalog comparison were inspected; no horizontal dialog overflow. Archived receipts remain fixture-verified, not production-receipt verified. No real25-period application, late-transaction fault injection or production rollout was attempted. See [Spanish operator guide](../user-guide/es/import-reviews.md).
+
+## 20. Current identity-group projection (V18)
+
+Implemented against [V18](../planning/excel-mda/contrato-api-v18.md), using the current backend serializer/projector as evidence. `VITE_INVENTORY_IMPORT_IDENTITY_GROUP_PROJECTION_V18` stays false by default. The route requires JEFE plus V4/V17; consultation works with V16 disabled. Verify the deployed API/storage, including0023 and subsequent prerequisites of that server, before enabling. No API/Prisma/contract/dependency/.env changes or operative writes.
+
+`identity-group-projection-model/api` represents the separate V18 envelope. It binds the active receipt, original scope, every reserved row/group, original/reviewed/current cells, current metadata and all false effect flags. Shared V16 candidate/issue/cell/impact guards are reused without constructing a fictional V16 response. The reader preserves current null evidence links, original decisions as antecedents, cross-batch capture references, amendments and prior assignment/retirement uses. Summary/freshness/counts/limits and group-key uniqueness are checked; server hashes, matching, classification and business rules are not reimplemented. Requests use only GET `/inventory/imports/batches/:id/identity-group-reviews/:reviewId/effective-preview` with one30s deadline. No query overrides or CSRF/write fallback.
+
+`IdentityGroupReviewsDialog` owns `useIdentityGroupProjection` before opening the result Dialog, keeping the explicit user read single-flight under Strict Mode. The hook aborts closed/detached reads, retains an earlier result as unconfirmed on refresh failures and rejects stale callbacks. `IdentityGroupProjectionDialog/Details` reuse Catalog's owners and the bounded `IdentityGroupResultTable` renderer, now shared with V16. A controlled groupKey selection survives a changed projection; paging resets with the new projection context. The UI separates receipt/current context, original/reviewed/current/normalized identities, capped10-of-N inventory matches, original decisions and untransferred documentary evidence. Rows remain responsive cards and all large sections page25. Back restores entry focus. A release discovered by V18 can be reconsulted through V17, updating its parent list metadata from the validated receipt. The V17 cancellation workflow remains independent.
+
+The shared source-cell DTO/guard now accepts an explicit null formula cache, matching the extractor/API contract without evaluating it or replacing raw values. A focused regression covers null versus structured cache data. Errors remain Spanish and visible in the active modal; invalid provenance has an administrative-recovery message.
+
+Verification:333 frontend tests passed, including10 V18 API/shape cases covering five offline pure-projector fixtures, five async lifecycle cases and one shared source-cell regression. Existing V16/V17 tests still pass after sharing guards/tables. TypeScript and scoped ESLint passed; enabled/default production builds passed, with the final artifact flags false. React Doctor changed70/100/10 prior warnings; full67/100/99 warnings, unchanged from the preceding completion. Strict audit81 findings:27 false native-Select ownership attributions to the authored component and54 preexisting architecture-HTML findings. No suppressions/global-report/DESIGN.md changes.
+
+Firefox with fully intercepted synthetic API covered one explicit read, double-refresh single-flight, back/row focus, changed inventory/context,10-of11 match disclosure, retained503/offline/malformed results, canceled-read late completion, external release/receipt/parent-row update,25 groups and50 changes paged25+25, group selection across a new projection, numeric raw values, JEFE/other-role gates and V18-off/V17-on behavior. Desktop1280×800 and mobile375×667/320×667, light/dark/system/reduced motion, open Select geometry/Escape and Catalog comparison were inspected without horizontal modal overflow. Fixtures were generated offline by the existing pure backend compiler; tests do not import backend code or open a database. This increment did not exercise a live V18 database transaction, production workbook or deployment, and does not certify every browser/assistive technology/zoom combination. V19 decisions and evidence-lineage review remain the next frontend work.
+
+## 21. Explicit group decisions and evidence membership (V19)
+
+Implemented2026-10-26 against the [V19 contract](../planning/excel-mda/contrato-api-v19.md), its strict serializer/schema and pure policy. `VITE_INVENTORY_IMPORT_IDENTITY_GROUP_DECISIONS_V19` remains false by default. JEFE/V4/V17 are required; reading decisions does not depend on V16/V18. Preparing a new decision requires a fresh V18 consultation. Check the deployed API/storage, including0024 and later prerequisites of the actual running server, before enabling. No API/Prisma/shared-contract/dependency/.env changes, real writes or Git publication.
+
+`identity-group-decision-model/api` own separate DTO, metadata, stored projection and receipt types. The version is global to the whole V17 review and independent of batch/source versions. Read context combines the consulted V18 projection with current latest metadata and requires matching active currentProjectionId. Strict guards bind batch/review/group, actor/request/body, complete evidence versions/coverage, false effect flags and exact saved projection. Shared V18 validation has a named archived path for released reviews; the current projection reader still rejects released reservations. The frontend does not compute server hashes, group identities, matching or business compilation.
+
+`GroupDecisionEditorDialog` exposes an initially-empty action, explicit unique suggested asset when applicable, mandatory motive/reference and one evidence editor at a time. The searchable shared Select can navigate all100 evidence items. No disposition is preselected. HOLD/EXCLUDE may leave all pending; any requested review must cover all current evidence. Proposals require unblocked complete context and full evidence review, with no matches for new assets or exactly one complete suggested match for linking. Latest proposals of other groups are checked even if their projection is older; the server remains authoritative. Consumed evidence cannot gain new grouping authority.
+
+Review is a separate no-write step with a paginated evidence summary and explicit scope confirmation. `useGroupDecisionMutation` captures a detached immutable actor-bound UUID/body only on save, blocks synchronous duplicates and uses CSRF plus one30s deadline. Known rejection requires explicit fresh context and renewed review/confirmation; evidence dispositions clear while texts remain. Unknown outcomes retain identical intent/body/key for explicit recovery and disable editing/context refresh. Busy prevents ordinary close/Escape/backdrop. Dirty/uncertain discard and beforeunload explain memory loss; private drafts are not stored in the browser. Internal navigation/session continuity remains a separate previously documented limitation.
+
+`GroupDecisionsDialog` reads actual25-item latest/history pages, optional groupKey and metadata only. It learns group filters from returned decision identities, never manufactures a groupKey. Changed global version, projection, reservation or totals between pages require restart. Detail reads only the selected full receipt, reusing `GroupDecisionDetails` and the named archived V18 presentation. Back restores page/scroll/row focus. Projection snapshots remain past facts; projectionCurrent means matching hashes under an active review, not latest intention or application authority. POST does not supply those current flags and the UI does not invent them. Canceled reviews retain read-only history; identical recovery does not reactivate them. No inventory/application/relink/release/older importer fallback is exposed.
+
+Verification:360 frontend tests, including27 V19 model/API/async lifecycle cases; TypeScript and scoped ESLint; production builds with all implemented flags enabled and with all false, leaving the final artifact disabled. Existing V16/V17/V18 tests still pass. Synthetic projection fixtures were generated offline with the existing pure V18 projector and accepted by the pure V19 policy; receipt metadata is explicitly synthetic. Test runners do not import backend code or open a database.
+
+Firefox with every API request intercepted verified explicit two-step confirmation, missing-evidence validation, double-click single-flight, busy Escape, identical recovery after response loss and reservation cancellation, fresh confirmation/new key after a known conflict, malformed200 rejection, discard cancellation, history25→2, retained503, released archived detail, row focus/internal scroll, JEFE/other roles, V19-off/V18-on and V19 read with V18/V16 off. At1280×800 and320/375×667, light/dark/system/reduced-motion paths were inspected;100 evidence items and maximum-length text remain reachable without horizontal modal overflow, with footer actions inside the viewport and Select popup inside its width. This does not certify every browser, assistive technology or zoom combination.
+
+React Doctor changed71/100 with10 existing warnings; full68/100 with102 warnings. The three added full-scan warnings concern control-flow complexity in the editor, history and archived/current projection template; no errors or suppressions. Strict read-only audit83 findings:29 authored-Select/native attribution false positives,54 prior architecture-HTML findings. DESIGN.md/global audit/config and the320 protected backend/contract/root paths remain unchanged. Real API/database transaction, migration installation, deployment and authorized pilot remain unverified. Next frontend increment: V20 read-only grouping plan; V21–V34 and durable navigation/session intent recovery remain separate work.

@@ -1,3 +1,5 @@
+import './require-test-database.js';
+
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { after, before, test } from 'node:test';
@@ -296,6 +298,27 @@ test('concurrent assign/status/decommission/return operations remain consistent'
   assert.equal(returnResults.filter((response) => response.statusCode === 200).length >= 1, true);
   const returnStored = await prisma.asset.findUniqueOrThrow({ where: { id: returnAsset.id } });
   assert.equal(await prisma.assignment.count({ where: { assetId: returnAsset.id, endedAt: null } }), returnStored.status === AssetStatus.ASSIGNED ? 1 : 0);
+});
+
+test('office loan returns roll back references and status when audit persistence fails', async () => {
+  const jefe = await login(users.jefe.username);
+  const asset = parsed(await createAsset(jefe)).asset;
+  const created = await mutate('POST', `/assets/${asset.id}/assignments`, jefe, { recipientType: 'OFFICE', officeName: 'Pucon', assignmentType: 'LOAN' });
+  assert.equal(created.statusCode, 201);
+  const assignment = parsed(created).assignment;
+  const faultyApp = buildApp(databaseWithFailingAudit());
+  try {
+    const response = await faultyApp.inject({ method: 'POST', url: `/assets/${asset.id}/assignments/${assignment.id}/return`, headers: { cookie: jefe, 'x-csrf-token': await csrf(jefe) }, payload: { returnStatus: 'UNDER_REVIEW', ticketReference: 'RETURN-1', notes: 'Must roll back' } });
+    assert.equal(response.statusCode, 500);
+    const stored = await prisma.assignment.findUniqueOrThrow({ where: { id: assignment.id } });
+    assert.equal(stored.endedAt, null);
+    assert.equal(stored.returnTicketReference, null);
+    assert.equal(stored.returnNotes, null);
+    assert.equal(stored.returnRecordedAt, null);
+    assert.equal((await prisma.asset.findUniqueOrThrow({ where: { id: asset.id } })).status, AssetStatus.ASSIGNED);
+  } finally {
+    await faultyApp.close();
+  }
 });
 
 test('PostgreSQL protects Assignment history and Asset/Assignment consistency', async () => {

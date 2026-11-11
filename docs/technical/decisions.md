@@ -365,7 +365,7 @@ Phase 1 (authentication) requires an initial user that can log in before any use
 
 ### Decision
 
-- The initial administrator is created by an explicit, interactive command that prompts for username, display name, and password ([`bootstrap:admin`](../deployment/database.md#bootstrap-administrator)); the password is hashed with the same scrypt mechanism used by the application and is never printed or stored in plain text.
+- The initial administrator is created by an explicit command requesting username, display name, phone, email, password and confirmation, in that order ([bootstrap and access guide](../deployment/users.md#first-administrator)); password inputs are hidden and stored only as scrypt hashes.
 - The command **refuses to run when any users already exist** and uses a PostgreSQL advisory lock (`pg_advisory_xact_lock`) so concurrent execution cannot create a second bootstrap administrator.
 - It writes an audit entry (`USER_BOOTSTRAP_JEFE`) and creates the account with the `JEFE` role.
 - There is **no** default/backdoor user, no seeded credentials in source or seeds, and no automatic administrator creation on startup.
@@ -374,7 +374,7 @@ Phase 1 (authentication) requires an initial user that can log in before any use
 
 - The database is never left with a known-default credential; every real deployment has a unique initial administrator.
 - Re-running the command safely fails, which prevents accidental resets on a populated database.
-- The interactive flow requires a human at first setup; headless/automated provisioning must supply the password via piped stdin (documented).
+- Manual setup uses interactive prompts; headless provisioning supplies all six newline-separated fields through protected stdin, never literal passwords in arguments/history/logs. See the access guide for constraints and populated-database recovery limitations.
 
 - Event sourcing — rejected (ADR-3).
 - Full CQRS — rejected (ADR-3).

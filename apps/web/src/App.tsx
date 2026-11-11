@@ -1,21 +1,25 @@
+import { lazy } from 'react';
 import { AuthProvider, LoginPage } from './features/auth/auth';
 import { useAuth } from './features/auth/auth-context';
-import { HomePage } from './features/home/HomePage';
-import { CatalogPage } from './features/home/CatalogPage';
-import { InventoryPage } from './features/home/InventoryPage';
-import { CorrectionsPage } from './features/home/CorrectionsPage';
-import { UsersPage, ForbiddenPage } from './features/admin/UsersPage';
-import { AccountPage } from './features/auth/AccountPage';
 import { ToastProvider } from './ui';
 import { canViewUsers } from './lib/permissions';
 import { AppLayout } from './ui/AppLayout';
 import { BrowserRouter, Link, Route, Routes } from 'react-router-dom';
 
+const HomePage = lazy(() => import('./features/home/HomePage').then((module) => ({ default: module.HomePage })));
+const CatalogPage = lazy(() => import('./features/home/CatalogPage').then((module) => ({ default: module.CatalogPage })));
+const InventoryPage = lazy(() => import('./features/home/InventoryPage').then((module) => ({ default: module.InventoryPage })));
+const ImportReviewPage = lazy(() => import('./features/imports/ImportReviewPage').then((module) => ({ default: module.ImportReviewPage })));
+const CorrectionsPage = lazy(() => import('./features/home/CorrectionsPage').then((module) => ({ default: module.CorrectionsPage })));
+const UsersPage = lazy(() => import('./features/admin/UsersPage').then((module) => ({ default: module.UsersPage })));
+const ForbiddenPage = lazy(() => import('./features/admin/UsersPage').then((module) => ({ default: module.ForbiddenPage })));
+const AccountPage = lazy(() => import('./features/auth/AccountPage').then((module) => ({ default: module.AccountPage })));
+
 export function App() {
   return (
     <ToastProvider>
       <AuthProvider>
-        <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+        <BrowserRouter>
           <AuthenticatedApp />
         </BrowserRouter>
       </AuthProvider>
@@ -37,6 +41,7 @@ function AuthenticatedApp() {
       <Route path="/" element={<HomePage />} />
       <Route path="/catalog" element={<CatalogPage />} />
       <Route path="/inventory" element={<InventoryPage />} />
+      <Route path="/inventory/imports" element={<ImportReviewPage />} />
       <Route path="/corrections" element={<CorrectionsPage />} />
       <Route path="/users" element={canViewUsers(user.role) ? <UsersPage /> : <ForbiddenPage />} />
       <Route path="/account" element={<AccountPage />} />

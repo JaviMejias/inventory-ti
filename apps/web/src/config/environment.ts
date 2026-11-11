@@ -1,3 +1,21 @@
 export const environment = {
-  apiUrl: import.meta.env.VITE_API_URL ?? 'http://localhost:3000'
+  apiUrl: import.meta.env.VITE_API_URL ?? 'http://localhost:3000',
+  inventoryMetadataV1: import.meta.env.VITE_INVENTORY_METADATA_V1 === 'true',
+  inventoryAssignmentsV2: import.meta.env.VITE_INVENTORY_ASSIGNMENTS_V2 === 'true',
+  inventoryImportReviewV4: import.meta.env.VITE_INVENTORY_IMPORT_REVIEW_V4 === 'true',
+  inventoryImportPlanV5: import.meta.env.VITE_INVENTORY_IMPORT_PLAN_V5 === 'true',
+  inventoryImportApplyV6: import.meta.env.VITE_INVENTORY_IMPORT_APPLY_V6 === 'true',
+  inventoryImportSourceV7: import.meta.env.VITE_INVENTORY_IMPORT_SOURCE_V7 === 'true',
+  inventoryImportIdentityV8: import.meta.env.VITE_INVENTORY_IMPORT_IDENTITY_V8 === 'true',
+  inventoryImportHistoryV9: import.meta.env.VITE_INVENTORY_IMPORT_HISTORY_V9 === 'true',
+  inventoryImportAssignmentPlanV10: import.meta.env.VITE_INVENTORY_IMPORT_ASSIGNMENT_PLAN_V10 === 'true',
+  inventoryImportAssignmentApplyV11: import.meta.env.VITE_INVENTORY_IMPORT_ASSIGNMENT_APPLY_V11 === 'true',
+  inventoryImportEvidenceAmendmentsV12: import.meta.env.VITE_INVENTORY_IMPORT_EVIDENCE_AMENDMENTS_V12 === 'true',
+  inventoryImportRetirementPlanV13: import.meta.env.VITE_INVENTORY_IMPORT_RETIREMENT_PLAN_V13 === 'true',
+  inventoryImportRetirementApplyV14: import.meta.env.VITE_INVENTORY_IMPORT_RETIREMENT_APPLY_V14 === 'true',
+  inventoryImportRetirementReconciliationV15: import.meta.env.VITE_INVENTORY_IMPORT_RETIREMENT_RECONCILIATION_V15 === 'true',
+  inventoryImportIdentityGroupsV16: import.meta.env.VITE_INVENTORY_IMPORT_IDENTITY_GROUPS_V16 === 'true',
+  inventoryImportIdentityGroupReviewsV17: import.meta.env.VITE_INVENTORY_IMPORT_IDENTITY_GROUP_REVIEWS_V17 === 'true',
+  inventoryImportIdentityGroupProjectionV18: import.meta.env.VITE_INVENTORY_IMPORT_IDENTITY_GROUP_PROJECTION_V18 === 'true',
+  inventoryImportIdentityGroupDecisionsV19: import.meta.env.VITE_INVENTORY_IMPORT_IDENTITY_GROUP_DECISIONS_V19 === 'true'
 };

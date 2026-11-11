@@ -6,7 +6,7 @@ import { Role } from '@prisma/client';
 
 import { prisma } from '../config/database.js';
 import { hashPassword } from '../lib/password.js';
-import { bootstrapAdminSchema } from '../auth/schemas.js';
+import { collectBootstrapInput } from './bootstrap-input.js';
 
 const bootstrapLockKey = 84821101;
 const isTty = Boolean(input.isTTY);
@@ -28,34 +28,33 @@ async function readPipedInput(): Promise<string[]> {
 function nextLine(question: string, hidden: boolean): Promise<string> {
   if (isTty) {
     if (hidden) {
+      // Readline's terminal listener must not echo password input.
+      readline!.close();
       return promptHiddenTty(question);
     }
     return readline!.question(`${question} `).then((answer) => answer.trim());
   }
 
   if (!pipedReady) {
-    throw new Error(`Internal error: piped input was not loaded before prompt "${question}"`);
+    throw new Error('No se pudo leer la entrada del comando. No se creó ningún administrador.');
   }
   if (pipedIndex >= pipedLines.length) {
-    return Promise.reject(new Error(`No more piped input available for prompt "${question}"; the bootstrap was cancelled without creating an administrator.`));
+    return Promise.reject(new Error('Faltan datos en la entrada del comando. Envía los seis campos en el orden indicado. No se creó ningún administrador.'));
   }
 
   const value = pipedLines[pipedIndex];
   pipedIndex += 1;
   if (hidden) {
-    output.write(`${question} [hidden]\n`);
+    output.write(`${question} [oculta]\n`);
   } else {
     output.write(`${question} ${value}\n`);
   }
-  return Promise.resolve(value.trim());
+  return Promise.resolve(hidden ? value : value.trim());
 }
 
 function promptHiddenTty(question: string): Promise<string> {
   return new Promise((resolve, reject) => {
-    output.write(`${question} `);
-
     input.setRawMode(true);
-    input.resume();
     input.setEncoding('utf8');
 
     let value = '';
@@ -76,7 +75,7 @@ function promptHiddenTty(question: string): Promise<string> {
         }
         if (char === '\u0003') {
           cleanup();
-          reject(new Error('Aborted by user'));
+          reject(new Error('Operación cancelada. No se creó ningún administrador.'));
           return;
         }
         if ((char === '\b' || char === '\u007f') && value.length > 0) {
@@ -90,6 +89,8 @@ function promptHiddenTty(question: string): Promise<string> {
     };
 
     input.on('data', onData);
+    input.resume();
+    output.write(`${question} `);
   });
 }
 
@@ -102,47 +103,30 @@ async function bootstrap(): Promise<void> {
 
   const existingUsers = await prisma.user.count();
   if (existingUsers > 0) {
-    throw new Error(`Bootstrap refused: ${existingUsers} user(s) already exist. The initial JEFE can only be created on an empty database. Manage users through the application instead.`);
+    throw new Error(`Ya existen ${existingUsers} usuario(s). Este comando solo crea el primer JEFE en una base sin usuarios. Administra las cuentas desde la aplicación.`);
   }
 
-  const username = await nextLine('Username', false);
-  const displayName = await nextLine('Display name', false);
-  const phone = await nextLine('Phone', false);
-  const rawEmail = await nextLine('Email', false);
-  const password = await nextLine('Password', true);
-  const passwordConfirmation = await nextLine('Confirm password', true);
-
-  if (password !== passwordConfirmation) {
-    throw new Error('Passwords do not match');
-  }
-
-  const parsed = bootstrapAdminSchema.safeParse({
-    username,
-    email: rawEmail,
-    displayName,
-    phone,
-    password,
-    role: 'JEFE'
+  output.write('\nCreación del administrador inicial (JEFE).\n');
+  const data = await collectBootstrapInput({
+    interactive: isTty,
+    read: nextLine,
+    write: (message) => { output.write(message); }
   });
-  if (!parsed.success) {
-    const issues = parsed.error.issues.map((issue) => `${issue.path.join('.')}: ${issue.message}`);
-    throw new Error(`Invalid input:\n- ${issues.join('\n- ')}`);
-  }
 
   const user = await prisma.$transaction(async (transaction) => {
     await transaction.$executeRawUnsafe(`SELECT pg_advisory_xact_lock(${bootstrapLockKey})`);
     const currentCount = await transaction.user.count();
     if (currentCount > 0) {
-      throw new Error('Bootstrap refused: users were created concurrently. No administrator was created.');
+      throw new Error('Se creó otro usuario mientras ingresabas los datos. No se creó este administrador. Administra las cuentas desde la aplicación.');
     }
 
     const created = await transaction.user.create({
       data: {
-        username: parsed.data.username,
-        email: parsed.data.email ?? null,
-        displayName: parsed.data.displayName,
-        phone: parsed.data.phone,
-        passwordHash: hashPassword(parsed.data.password),
+        username: data.username,
+        email: data.email,
+        displayName: data.displayName,
+        phone: data.phone,
+        passwordHash: hashPassword(data.password),
         role: Role.JEFE,
         isActive: true
       }
@@ -161,14 +145,14 @@ async function bootstrap(): Promise<void> {
     return created;
   });
 
-  output.write(`\nBootstrap complete.\n`);
-  output.write(`Created JEFE user "${user.username}" (${user.displayName}).\n`);
-  output.write(`Log in through the web application. The password was never stored in plain text.\n`);
+  output.write('\nAdministrador creado correctamente.\n');
+  output.write(`Se creó el usuario JEFE "${user.username}" (${user.displayName}).\n`);
+  output.write('Ya puedes iniciar sesión en la aplicación. La contraseña no se guardó en texto plano.\n');
 }
 
 bootstrap()
   .catch((error: unknown) => {
-    output.write(`\nBootstrap failed: ${error instanceof Error ? error.message : String(error)}\n`);
+    output.write(`\nNo se pudo crear el administrador: ${error instanceof Error ? error.message : 'Error inesperado.'}\n`);
     process.exitCode = 1;
   })
   .finally(async () => {

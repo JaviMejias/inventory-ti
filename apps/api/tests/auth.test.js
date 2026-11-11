@@ -1,3 +1,5 @@
+import './require-test-database.js';
+
 import assert from 'node:assert/strict';
 import { createHash, randomUUID } from 'node:crypto';
 import { after, before, test } from 'node:test';
@@ -321,6 +323,16 @@ test('duplicate username and email conflicts are rejected', async () => {
   assert.equal(duplicateEmail.json().details?.field, 'email');
 });
 
+test('administrators cannot reset their own access or invalidate their current session', async () => {
+  const jefe = await login(users.jefe.username);
+  const before = await prisma.user.findUnique({ where: { id: users.jefe.id } });
+  const reset = await app.inject({ method: 'POST', url: `/users/${users.jefe.id}/reset-access`, headers: { cookie: jefe.cookie, 'x-csrf-token': await csrf(jefe.cookie) } });
+  assert.equal(reset.statusCode, 403);
+  assert.equal(reset.json().code, 'SELF_ACCESS_RESET');
+  assert.equal((await prisma.user.findUnique({ where: { id: users.jefe.id } })).passwordHash, before.passwordHash);
+  assert.equal((await app.inject({ method: 'GET', url: '/auth/me', headers: { cookie: jefe.cookie } })).statusCode, 200);
+});
+
 test('activation, password change, administrative reset, and code concurrency are enforced', async () => {
   const jefe = await login(users.jefe.username);
   const jefeToken = await csrf(jefe.cookie);
@@ -395,7 +407,6 @@ test('login is rate limited after ten failed attempts from one source IP', async
 });
 
 after(async () => {
-  await prisma.user.deleteMany({ where: { username: { startsWith: `phase3-` } } });
   await prisma.user.deleteMany({ where: { username: { endsWith: suffix } } });
   await app.close();
 });

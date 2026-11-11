@@ -34,11 +34,86 @@ export function getApiErrorMessage(error: unknown, fallback: string): string {
     case 'INVALID_CREDENTIALS': return 'El usuario, correo o contraseña no son correctos.';
     case 'CONFLICT': return 'Ya existe un registro con esos datos.';
     case 'VALIDATION_ERROR': return 'Revisa los datos ingresados.';
+    case 'IMPORT_REVIEW_NOT_READY': return 'La revisión de importaciones todavía no está habilitada en el servidor. El responsable debe completar el despliegue y las migraciones antes de continuar.';
+    case 'INVALID_HISTORICAL_TARGET': return 'Selecciona una observación física reconocida por la consulta de evidencia histórica.';
+    case 'INVALID_HISTORICAL_EVIDENCE': return 'La evidencia guardada no puede interpretarse con seguridad. Solicita una revisión del servidor; no reemplaces su origen.';
+    case 'HISTORICAL_PLAN_LIMIT': return 'La historia o las revisiones exceden el límite de planificación. Solicita una revisión; no se prepara una historia parcial.';
+    case 'HISTORICAL_PLAN_CHANGED': return 'El plan histórico cambió. Actualiza la evidencia, genera otro plan y confirma nuevamente antes de aplicar.';
+    case 'HISTORICAL_PLAN_BLOCKED': return 'El periodo tiene bloqueos vigentes. Genera un plan actualizado y revisa las incidencias antes de aplicar.';
+    case 'HISTORICAL_EVIDENCE_ALREADY_APPLIED': return 'Una evidencia ya pertenece a historia aplicada. Consulta los comprobantes del activo; no la uses para otro periodo.';
+    case 'HISTORICAL_APPLICATION_BUSY': return 'La aplicación histórica está ocupada. Recupera exactamente la misma intención y clave.';
+    case 'HISTORICAL_APPLICATION_CONFLICT': return 'Hay un conflicto con una aplicación existente. Recupera el mismo intento y consulta los comprobantes; no generes una clave duplicada.';
+    case 'CLOSED_APPLICATION_LIST_CHANGED': return 'Cambió el total de comprobantes al consultar las páginas. Conservamos las filas; actualiza los periodos desde el inicio.';
+    case 'HISTORY_PREVIEW_CHANGED': return 'La evidencia histórica cambió. Actualiza la consulta y revisa la selección antes de guardarla.';
+    case 'HISTORY_ASSET_LINK_UNCONFIRMED': return 'El vínculo con el activo no está confirmado. Actualiza la evidencia y elige un vínculo autorizado o guarda expresamente sin vincular.';
+    case 'HISTORY_EVIDENCE_ALREADY_CAPTURED': return 'Esta observación ya fue capturada, posiblemente desde otro lote del mismo archivo. Consulta su comprobante; no la captures nuevamente.';
+    case 'HISTORY_CAPTURE_CONFLICT': return 'La captura coincide con una solicitud o evidencia existente. Recupera primero la misma intención y consulta los comprobantes; no generes otra clave.';
+    case 'HISTORY_CAPTURE_BUSY': return 'La captura está ocupada. Reintenta recuperar con la misma intención y clave.';
+    case 'HISTORY_SOURCE_LIMIT': return 'La evidencia supera el límite de revisión admitido por el servidor. Solicita una revisión del proceso; no recortes el origen para forzar la captura.';
+    case 'HISTORY_LIST_CHANGED': return 'Se añadieron capturas mientras consultabas las páginas. Las filas cargadas se conservan; actualiza los comprobantes desde el inicio para continuar.';
+    case 'EVIDENCE_HISTORY_CHANGED': return 'La versión vigente cambió entre páginas. Se conserva la consulta anterior; consulta las versiones desde el inicio.';
+    case 'EVIDENCE_VERSION_CONFLICT': return 'Otra revisión cambió esta evidencia. Consulta lo vigente, genera otra propuesta y vuelve a confirmar.';
+    case 'EVIDENCE_ALREADY_APPLIED': return 'Esta evidencia ya fue usada en historia aplicada. No se puede enmendar por este flujo.';
+    case 'EVIDENCE_AMENDMENT_PLAN_CHANGED': return 'La propuesta documental ya no coincide con el servidor. Revisa y genera una nueva antes de confirmar.';
+    case 'EVIDENCE_AMENDMENT_BLOCKED': return 'El servidor bloqueó la enmienda. Genera una propuesta nueva para revisar las causas; no se guardó por este intento.';
+    case 'EVIDENCE_AMENDMENT_BUSY':
+    case 'EVIDENCE_AMENDMENT_CONFLICT': return 'No se pudo confirmar el resultado documental. Recupera el mismo intento antes de preparar otro.';
+    case 'SOURCE_REVISION_CONFLICT': return 'Cambió la interpretación del origen. Actualiza su revisión antes de continuar; los planes anteriores deben volver a evaluarse.';
+    case 'INVALID_SOURCE_TARGET': return 'Selecciona un equipo físico y una fila reconocida del lote original.';
+    case 'INVALID_SOURCE_FIELD': return 'Ese campo no está reconocido en la hoja seleccionada. Revisa la evidencia; no añadas columnas por inferencia.';
+    case 'FUTURE_SOURCE_CORRECTION': return 'La fecha de recepción verificada no puede ser futura.';
+    case 'SOURCE_CORRECTION_LIMIT': return 'La revisión supera los límites del origen. Revisa hasta 25 cambios por solicitud.';
+    case 'SOURCE_FIELD_UNCHANGED': return 'Los valores indicados ya coinciden con el origen vigente. Revisa o quita los cambios sin efecto.';
+    case 'SOURCE_TARGET_ALREADY_APPLIED': return 'Este equipo del archivo ya fue aplicado, incluso desde otro lote. Su origen no puede reinterpretarse; utiliza las correcciones operativas.';
+    case 'INVALID_SOURCE_REVISION': return 'No se pudo interpretar el historial de correcciones. Solicita revisión del servidor; no reemplaces el archivo original.';
+    case 'SOURCE_REVISION_LIMIT': return 'El lote alcanzó el límite de revisiones de origen. Solicita una revisión del proceso antes de continuar.';
+    case 'IDENTITY_CANNOT_DROP_SOURCE_VALUE': return 'No se puede eliminar una identidad presente o incierta. Verifica la serie y el activo fijo sin descartar evidencia.';
+    case 'IDENTITY_REVIEW_SCOPE_LIMIT': return 'Este equipo supera las 12 observaciones permitidas para verificar identidad. Solicita revisión del origen.';
+    case 'IDENTITY_GROUP_CHANGE_REQUIRES_REVIEW': return 'La identidad propuesta dividiría o uniría equipos del archivo. Revisa el origen; no se permite forzar la agrupación.';
+    case 'IDENTITY_GROUP_COVERAGE_REQUIRED': return 'Cada fila de los candidatos seleccionados debe pertenecer exactamente a un grupo. Revisa el reparto completo.';
+    case 'IDENTITY_GROUP_SCOPE_LIMIT': return 'El alcance supera 25 observaciones completas. Replantea los candidatos; no recortes filas de un candidato.';
+    case 'IDENTITY_GROUP_EVIDENCE_LIMIT': return 'La evidencia vinculada supera el límite de revisión. Solicita una revisión administrativa; no se presenta un resultado parcial.';
+    case 'IDENTITY_GROUP_SOURCE_RESERVED': return 'Estas filas pertenecen a una revisión de agrupaciones activa. Consulta esa revisión antes de preparar otra propuesta.';
+    case 'IDENTITY_GROUP_SOURCE_ALREADY_APPLIED': return 'Estas filas ya fueron utilizadas por un flujo de grupos. Consulta sus comprobantes; no las reinterpretes con este plan.';
+    case 'IDENTITY_GROUP_PLAN_CHANGED': return 'El escenario de agrupación cambió. Actualiza el contexto, genera otro escenario y vuelve a revisar antes de reservar.';
+    case 'IDENTITY_GROUP_PLAN_BLOCKED': return 'El escenario tiene bloqueos. Genera uno actualizado y revisa todas sus incidencias antes de reservar.';
+    case 'IDENTITY_GROUP_ALREADY_RELEASED': return 'Esta reserva ya fue cancelada. Consulta su comprobante; la cancelación no se puede reescribir ni reactivar.';
+    case 'INVALID_IDENTITY_GROUP_REVIEW': return 'No se pudo validar la procedencia de esta revisión. Consulta el comprobante guardado y solicita una revisión administrativa.';
+    case 'IDENTITY_GROUP_REVIEW_BUSY':
+    case 'IDENTITY_GROUP_REVIEW_CONFLICT': return 'No se pudo confirmar la revisión. Recupera exactamente el mismo intento o consulta el comprobante antes de preparar otro.';
+    case 'IDENTITY_GROUP_REVIEW_LIST_CHANGED': return 'Cambió el total de revisiones entre páginas. Se conserva la consulta anterior; actualiza desde el inicio para continuar.';
+    case 'INVALID_IDENTITY_GROUP_TARGET': return 'El grupo no pertenece a esta revisión. Consulta nuevamente sus grupos antes de decidir.';
+    case 'IDENTITY_GROUP_DECISION_VERSION_CONFLICT': return 'Otra decisión cambió la versión global de esta revisión. Actualiza el contexto y vuelve a confirmar.';
+    case 'IDENTITY_GROUP_PROJECTION_CHANGED': return 'Cambió el origen, la evidencia o el inventario consultado. Actualiza el contexto y revisa nuevamente la decisión.';
+    case 'IDENTITY_GROUP_DECISION_BLOCKED': return 'La proyección tiene conflictos que impiden esta propuesta. Revisa los bloqueos del grupo.';
+    case 'IDENTITY_GROUP_ASSET_ALREADY_PROPOSED': return 'Otra decisión de esta revisión ya propone este activo. Consulta las últimas decisiones antes de continuar.';
+    case 'IDENTITY_GROUP_EVIDENCE_COVERAGE_REQUIRED': return 'Revisa explícitamente todas las evidencias del grupo, con su motivo y respaldo.';
+    case 'IDENTITY_GROUP_DECISION_LIST_CHANGED': return 'La revisión o sus decisiones cambiaron entre páginas. Actualiza desde el inicio para continuar.';
+    case 'IDENTITY_CROSS_CANDIDATE_CONFLICT': return 'La identidad coincide con otro equipo del mismo archivo. Revisa ambos antes de continuar.';
+    case 'IMPORT_PLAN_CHANGED': return 'El plan cambió desde la evaluación. Revisa el contexto, genera otro plan y confirma de nuevo; no se aplicó esta intención.';
+    case 'IMPORT_PLAN_BLOCKED': return 'La selección tiene bloqueos. Genera un plan actualizado y revisa las incidencias antes de continuar.';
+    case 'IMPORT_APPLY_BUSY': return 'El inventario está ocupado. Recupera la aplicación con la misma intención y clave; no prepares una solicitud duplicada.';
+    case 'IMPORT_TARGET_ALREADY_APPLIED': return 'Un equipo de este archivo ya fue aplicado, posiblemente desde otro lote. Consulta el comprobante original antes de continuar.';
+    case 'IMPORT_APPLICATION_CONFLICT': return 'La aplicación entra en conflicto con un resultado existente. Consulta los comprobantes y revisa un plan actualizado.';
+    case 'REVIEW_VERSION_CONFLICT': return 'Otro revisor cambió el lote. Actualiza la revisión y comprueba la decisión vigente antes de continuar.';
+    case 'BATCH_SNAPSHOT_STALE': return 'Cambió el inventario o las reglas del análisis. Conserva este lote como evidencia y genera uno vigente antes de vincular o proponer equipos.';
+    case 'INVALID_REVIEW_TARGET': return 'Este registro no admite esa decisión. Actualiza el lote y revisa su tipo.';
+    case 'ASSET_NOT_SUGGESTED': return 'Selecciona uno de los activos sugeridos por la previsualización; no se permite vincular otro activo.';
+    case 'NEW_ASSET_PROPOSAL_CONFLICT': return 'La identidad tiene coincidencias o no está confirmada. Revisa la evidencia antes de proponer un activo nuevo.';
+    case 'IDEMPOTENCY_KEY_REUSED': return 'Esta solicitud ya está asociada a otra intención. Actualiza el historial antes de registrar una nueva intención.';
+    case 'INVALID_REVIEW_SNAPSHOT': return 'No se pudo validar el origen guardado del lote. Solicita una revisión del servidor; no reemplaces su evidencia.';
+    case 'PREVIEW_DATABASE_LIMIT': return 'El inventario supera el límite permitido para esta previsualización. Solicita una revisión del proceso de importación.';
+    case 'IMPORT_CATALOG_LIMIT': return 'El catálogo supera los 5.000 productos compatibles con esta revisión. Solicita una revisión del proceso; puedes conservar tu selección y consultar el plan.';
+    case 'PREVIEW_STALE': return 'La previsualización cambió. Genera y revisa una nueva antes de guardar el lote.';
+    case 'PREVIEW_PAYLOAD_CONFLICT': return 'El contenido no coincide con la previsualización indicada. Conserva el origen y genera un análisis nuevo.';
+    case 'PAYLOAD_TOO_LARGE': return 'El origen supera el tamaño permitido. Revisa los límites del extractor antes de continuar.';
     case 'INVALID_ACTIVATION_CODE': return 'El código de activación no es válido o expiró.';
     case 'RATE_LIMITED': return 'Demasiados intentos. Espera unos minutos e inténtalo nuevamente.';
     case 'INVALID_CURRENT_PASSWORD': return 'La contraseña actual no es correcta.';
     case 'ACCOUNT_PENDING': return 'La cuenta está pendiente de activación.';
     case 'FORBIDDEN': return 'No tienes permisos para realizar esta operación.';
+    case 'SELF_ACCESS_RESET': return 'No puedes restablecer tu propio acceso desde Usuarios. Cambia tu contraseña en Mi cuenta.';
+    case 'LAST_ADMIN_REQUIRED': return 'Debes mantener al menos un Jefe activo con su contraseña configurada. Activa otra cuenta de Jefe antes de continuar.';
     case 'CSRF_INVALID': return 'La sesión de seguridad expiró. Recarga la página e inténtalo nuevamente.';
     case 'UNAUTHENTICATED': return 'La sesión expiró. Inicia sesión nuevamente.';
     case 'INSUFFICIENT_STOCK': {
@@ -46,6 +121,7 @@ export function getApiErrorMessage(error: unknown, fallback: string): string {
       return quantities ? `Stock insuficiente: hay ${quantities[1]} unidades disponibles y se requieren ${quantities[2]}.` : 'No hay stock suficiente para completar la operación.';
     }
     case 'PRODUCT_INACTIVE': return 'El producto está inactivo. Actívalo antes de registrar movimientos o activos.';
+    case 'PRODUCT_TRACKING_MODE_LOCKED': return 'Este producto ya tiene existencias, movimientos o activos. Conserva su seguimiento actual; para otro seguimiento crea un producto distinto.';
     case 'ASSET_PRODUCT_UNSUPPORTED': return 'Selecciona un producto con seguimiento por cantidad.';
     case 'PRODUCT_NOT_ASSET': return 'Selecciona un producto con seguimiento por activo individual.';
     case 'INITIAL_ALREADY_EXISTS': return 'Este producto ya tiene stock inicial registrado. Utiliza una entrada para añadir unidades.';
@@ -59,6 +135,7 @@ export function getApiErrorMessage(error: unknown, fallback: string): string {
     case 'RECIPIENT_REQUIRED': return 'Escribe el nombre y apellido de la persona que recibe el activo.';
     case 'ASSIGNMENT_REQUIRED': return 'Utiliza Asignar activo o Registrar devolución para cambiar una asignación.';
     case 'DECOMMISSION_REQUIRED': return 'Utiliza Dar de baja para retirar este activo de operación.';
+    case 'ASSIGNMENT_DATE_CONFLICT': return 'La fecha se cruza con otra entrega o no es posterior a su inicio. Corrige la fecha efectiva o actualiza el historial.';
     case 'ASSIGNMENT_ALREADY_CLOSED': return 'La asignación ya fue cerrada. Actualiza el historial para ver la devolución.';
     case 'ASSET_ASSIGNMENT_INCONSISTENT': return 'La asignación no coincide con el estado del activo. Actualiza la información y solicita una revisión si el problema continúa.';
     case 'USER_INACTIVE': return 'El usuario está inactivo y no puede recibir una asignación.';
@@ -124,6 +201,6 @@ export async function apiRequest<T>(path: string, options: globalThis.RequestIni
   }
 }
 
-export async function getCsrfToken(): Promise<string> {
-  return (await apiRequest<{ csrfToken: string }>('/auth/csrf')).csrfToken;
+export async function getCsrfToken(signal?: globalThis.AbortSignal): Promise<string> {
+  return (await apiRequest<{ csrfToken: string }>('/auth/csrf', { signal })).csrfToken;
 }

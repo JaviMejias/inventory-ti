@@ -1,6 +1,41 @@
 # Inventario
 
-Esta página explica cómo funciona el inventario del sistema.
+Inventario tiene dos pestañas: **Stock por cantidad** y **Activos rastreables**. No hay una pestaña de ubicaciones ni de trazabilidad global: el historial se abre desde cada producto o activo.
+
+## Consultar y navegar
+
+En Stock por cantidad busca por nombre o SKU. La tabla muestra Producto, SKU, Disponible, Mínimo, Estado e Historial. Sin unidades, el estado es rojo; con mínimo positivo y cantidad menor o igual a él, amarillo; por encima, verde. El mínimo configurado se distingue como advertencia, no como cantidad disponible.
+
+En Activos rastreables busca producto, etiqueta o serie y filtra por estado mediante el select compartido. Cada fila permite consultar Historial y, según rol/estado, Editar, Cambiar estado, Asignar o Ver asignación.
+
+La vista carga todas las páginas de productos requeridas y el conjunto de stock/activos. Después revela **25 registros a la vez** por pestaña al hacer scroll o cargar más; esto es presentación incremental local, no paginación remota de activos. Cambiar búsqueda/filtro reinicia el bloque visible, no cambia stock.
+
+En móvil las filas son tarjetas con identidad, valores, estado y acciones. Abrir/cerrar un modal de historial conserva la posición y registros cargados de la tabla.
+
+## Registrar un movimiento de cantidad
+
+1. En Stock por cantidad pulsa **Registrar movimiento**.
+2. Selecciona tipo y producto.
+3. Ingresa cantidad y motivo cuando corresponda.
+4. Pulsa **Guardar movimiento** y espera confirmación.
+
+Para entregar cables utiliza EXIT con cantidad positiva y registra el destinatario/contexto en el motivo. Para recibirlos de vuelta utiliza RETURN. No existe un registro estructurado de préstamos por cantidad como la asignación de un activo.
+
+INITIAL, ENTRY, EXIT y RETURN usan magnitud positiva: una salida de 5 se registra con cantidad 5 y tipo EXIT, no introduciendo -5. El formulario de ADJUSTMENT usa una cantidad firmada, distinta de cero, para sumar o restar y **requiere motivo** según la validación del servidor; no debe confundirse con Correcciones, que pide la cantidad final de un movimiento anterior. Las cantidades deben caber en el rango entero admitido por la API y el stock actual no puede quedar negativo.
+
+El campo Motivo de este modal todavía no cambia su etiqueta a obligatorio al elegir ADJUSTMENT; la falta de motivo será rechazada por el servidor. No es un permiso para enviar ajustes sin explicación.
+
+Si se produjo un error en un movimiento existente, utiliza [Correcciones](corrections.md). Para equipos individuales utiliza [Activos](assets.md) y [Asignaciones](assignments.md), no una salida de unidades de ese modelo.
+
+## Historial
+
+El botón de cada registro abre el modal compartido con una línea de tiempo de eventos, iconos y estados. En cantidad se presentan ingreso/salida/ajuste, fecha, usuario, motivo y balances antes/después; en activos se presentan sus eventos de ciclo de vida, incluidos cambios de estado registrados por el servidor.
+
+El historial de cantidad usa la cantidad corregida vigente y separa los movimientos compensatorios en otro apartado para no duplicar el efecto. Señala saldos históricos negativos o diferencias entre saldo del historial y stock actual. No crea ni elimina eventos desde la interfaz.
+
+Se carga la respuesta de historial recibida y se revelan **12 eventos a la vez** con scroll/control de carga; las compensaciones tienen su propio bloque de 12. En cantidad, la API ordena cronológicamente los movimientos originales (del más antiguo al más reciente) con los balances corregidos, usando fecha efectiva, fecha de creación e ID para desempatar. En activos, los eventos vienen del más reciente al más antiguo.
+
+El historial de activos combina movimientos, asignaciones y auditorías, con un límite de **200 registros de cada fuente** en la lectura del servidor. Una asignación puede generar un evento de entrega y otro de devolución; por eso el límite no significa 200 eventos totales. Revelar más tarjetas no solicita fuentes más antiguas: no se garantiza una historia ilimitada. La carga fallida tiene reintento y no se confunde con un historial vacío.
 
 ## Cómo se modela el inventario
 
@@ -69,8 +104,8 @@ Un movimiento registra, según corresponda: producto, activo, cantidad, tipo, us
 ## Stock bajo (low stock)
 
 - Cada producto tiene un **umbral de stock bajo** configurado a nivel de producto (campo `lowStockThreshold`).
-- Un producto está en stock bajo cuando `stock actual <= umbral`.
-- La visibilidad de stock bajo en el panel de control está planificada (aún no disponible).
+- Para alertas de mínimo, un producto por cantidad está en stock bajo cuando tiene umbral positivo y `stock actual <= umbral`.
+- [Inicio](dashboard.md) ya muestra estas alertas, sus cantidades y enlaces para buscar el producto en Inventario. Las fechas del Dashboard no alteran este stock actual.
 
 ## Qué puede hacer cada rol en inventario
 

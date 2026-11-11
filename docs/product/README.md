@@ -15,7 +15,8 @@ The product documentation is written in **English** (canonical language, see [AD
 
 ## Implemented vs. planned
 
-- **Implemented:** authentication, product catalog, quantitative inventory, asset management (Phase 6A), and asset assignments (Phase 6B).
-- **Implemented:** corrections. **Planned:** reports, dashboard, realtime WebSocket, PWA, storage.
+- **Implemented frontend:** sign-in/activation, product catalog, quantity/asset inventory, assignment/return and status flows, corrections, JEFE user administration, personal account editing and Dashboard consultation.
+- **Planned:** reports, realtime WebSocket, PWA/offline and storage. Dashboard is already a consultation view composed from existing REST reads, not an implemented dedicated backend aggregation module.
+- **Pending policy decision:** current Dashboard navigation includes SOPORTE, while the product permission matrix excludes that role. See the [documented discrepancy](../technical/frontend.md#unresolved-dashboard-access-policy); this status summary does not amend permissions.
 
 See the [README](../../README.md) for the current status.

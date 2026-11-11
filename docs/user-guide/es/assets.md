@@ -29,7 +29,7 @@ Un `Asset` pertenece a un `Product` cuyo modo de control es `ASSET`.
 | `LOST` | Reportado como perdido. | No |
 | `DECOMMISSIONED` | Ya no es inventario activo; no cuenta en inventario. | No |
 
-> **Nota:** El estado `ASSIGNED` y el flujo de asignaciones/devoluciones corresponden a la Fase 6B y están disponibles desde el panel del activo.
+> **Nota:** Asignaciones, devoluciones y cambios de estado están integrados en Inventario → Activos rastreables; no existe una ruta independiente de Activos en la navegación actual.
 
 ## Qué puede hacer cada rol con los activos
 
@@ -49,9 +49,12 @@ Un `Asset` pertenece a un `Product` cuyo modo de control es `ASSET`.
 
 Solo está disponible para los roles `JEFE` y `COORDINADOR`. Al crear un activo:
 
-1. Se elige un `Product` con modo de control `ASSET` y activo.
-2. Se registran la etiqueta (`assetTag`) y el número de serie (`serialNumber`) cuando se conocen.
-3. El activo se crea con estado `AVAILABLE`.
+1. Entra a **Inventario → Activos rastreables** y pulsa **Añadir activo**.
+2. Elige un producto activo con seguimiento `ASSET` mediante el select con búsqueda.
+3. Registra etiqueta (`assetTag`) y número de serie (`serialNumber`) cuando se conocen.
+4. Pulsa **Guardar activo**. Tras la confirmación, el activo queda `AVAILABLE`.
+
+**Editar** abre el mismo modal para cambiar etiqueta/serie sin perder el historial. No permite trasladar el activo a otro producto. Los errores conservan los valores y se notifican en español mediante toast; los conflictos/validaciones reconocidos aparecen junto al campo. Los fallos generales del editor todavía no tienen una alerta interna general.
 
 Reglas de identificación:
 
@@ -78,13 +81,17 @@ Para enviarlo a reparación, selecciona **En reparación**. Cuando vuelva a esta
 
 Solo el rol `JEFE` puede desincorporar un activo. Es una acción **terminal**:
 
+Esta es una regla del ciclo de vida del servidor; la tabla integrada actual no expone un botón de desincorporación. No confundir cambiar estado con disponer de ese flujo en la interfaz.
+
 - Establece `status = DECOMMISSIONED`, `isActive = false` y registra la fecha.
 - El activo desincorporado **no se puede editar ni devolver a un estado operativo**.
 - La desincorporación se bloquea si el activo tiene una asignación activa.
 
 ## Asignaciones
 
-Desde el panel de un activo `AVAILABLE` se puede asignar una persona activa. En un activo `ASSIGNED` se muestra la persona actual, la acción de devolución y el historial completo. Asignar o devolver no modifica el stock cuantitativo ni crea movimientos de inventario.
+En la fila de un activo `AVAILABLE`, **Asignar** abre el modal que pide nombre y apellido obligatorios en texto libre. La persona no necesita cuenta ni un registro previo en el sistema. En un activo `ASSIGNED`, **Ver asignación** muestra el destinatario, la devolución y las asignaciones recibidas de la API. Asignar o devolver no modifica stock cuantitativo ni crea movimientos de inventario. Véase [Asignaciones](assignments.md).
+
+Este formulario envía `personName`; no utiliza el selector de usuarios de la API ni la relación histórica opcional `personId`. Los párrafos antiguos que exigen una persona registrada no describen este flujo actual. Véase [la revisión cruzada](../../technical/frontend.md#8-api-contract-reconciliation).
 
 ## Datos y registro de auditoría
 

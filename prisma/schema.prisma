@@ -37,10 +37,32 @@ enum MovementType {
   ADJUSTMENT
 }
 
+enum AssignmentRecipientType {
+  PERSON
+  OFFICE
+}
+
+enum AssignmentType {
+  STANDARD
+  LOAN
+}
+
 enum CorrectionStatus {
   PENDING
   APPROVED
   REJECTED
+}
+
+enum ImportReviewTargetType {
+  CANDIDATE
+  RECORD
+}
+
+enum ImportReviewAction {
+  HOLD
+  EXCLUDE
+  LINK_EXISTING
+  PROPOSE_NEW
 }
 
 model User {
@@ -63,6 +85,25 @@ model User {
   auditLogs            AuditLog[]
   sessions             Session[]
   activationCodes      ActivationCode[]
+  createdImportBatches ImportBatch[]
+  importReviewDecisions ImportReviewDecision[]
+  importApplications   ImportApplication[]
+  identityGroupReviews ImportIdentityGroupReview[]
+  identityGroupReleases ImportIdentityGroupRelease[]
+  identityGroupDecisions ImportIdentityGroupDecision[]
+  identityGroupApplications ImportIdentityGroupApplication[]
+  groupHistoryApplications ImportGroupHistoryApplication[]
+  groupAssignmentApplications ImportGroupAssignmentApplication[]
+  groupAssignmentCorrections ImportGroupAssignmentCorrection[]
+  groupRetirementApplications ImportGroupRetirementApplication[]
+  importSourceRevisions ImportSourceRevision[]
+  importHistoryCaptures ImportHistoryCapture[]
+  importAssignmentApplications ImportAssignmentApplication[]
+  assignmentCorrections ImportAssignmentCorrection[]
+  importEvidenceAmendments ImportEvidenceAmendment[]
+  importRetirementApplications ImportRetirementApplication[]
+  retirementReconciliations ImportRetirementReconciliation[]
+  groupRetirementDocuments ImportGroupRetirementDocument[]
 
   @@index([isActive])
 }
@@ -84,6 +125,9 @@ model Product {
   id                String              @id @default(uuid()) @db.Uuid
   name              String              @db.VarChar(160)
   sku               String?             @unique @db.VarChar(100)
+  equipmentType     String?             @db.VarChar(100)
+  brand             String?             @db.VarChar(100)
+  model             String?             @db.VarChar(160)
   trackingMode      ProductTrackingMode
   lowStockThreshold Int                 @default(0)
   isActive          Boolean             @default(true)
@@ -107,18 +151,41 @@ model InventoryStock {
 }
 
 model Asset {
-  id               String              @id @default(uuid()) @db.Uuid
-  productId        String              @db.Uuid
-  assetTag         String?             @unique @db.VarChar(100)
-  serialNumber     String?             @db.VarChar(160)
-  status           AssetStatus         @default(AVAILABLE)
-  isActive         Boolean             @default(true)
-  decommissionedAt DateTime?
-  createdAt        DateTime            @default(now())
-  updatedAt        DateTime            @updatedAt
-  product          Product             @relation(fields: [productId], references: [id], onDelete: Restrict, onUpdate: Restrict)
-  assignments      Assignment[]
-  movements        InventoryMovement[]
+  id                 String              @id @default(uuid()) @db.Uuid
+  productId          String              @db.Uuid
+  assetTag           String?             @unique @db.VarChar(100)
+  serialNumber       String?             @db.VarChar(160)
+  technicalCondition String?             @db.VarChar(100)
+  usagePurpose       String?             @db.VarChar(100)
+  location           String?             @db.VarChar(160)
+  sector             String?             @db.VarChar(100)
+  ipAddress          String?             @db.VarChar(45)
+  hostname           String?             @db.VarChar(160)
+  loanCode           String?             @db.VarChar(100)
+  notes              String?             @db.Text
+  status             AssetStatus         @default(AVAILABLE)
+  isActive           Boolean             @default(true)
+  decommissionedAt   DateTime?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  product            Product             @relation(fields: [productId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  assignments        Assignment[]
+  movements          InventoryMovement[]
+
+  importReviewLinks   ImportReviewDecision[]
+  identityGroupDecisionLinks ImportIdentityGroupDecision[]
+  identityGroupApplicationItems ImportIdentityGroupApplicationItem[]
+  importApplicationItems ImportApplicationItem[]
+  historicalEvidence ImportHistoricalEvidence[]
+  groupHistoryLinks ImportGroupHistoryLink[]
+  groupAssignmentApplications ImportGroupAssignmentApplication[]
+  importAssignmentApplications ImportAssignmentApplication[]
+  importEvidenceAmendments ImportEvidenceAmendment[]
+
+  importRetirement ImportRetirementApplication?
+  groupRetirement ImportGroupRetirementApplication?
+  groupRetirementDocuments ImportGroupRetirementDocument[]
+  retirementReconciliations ImportRetirementReconciliation[]
 
   @@unique([productId, serialNumber])
   @@index([productId, status])
@@ -148,19 +215,34 @@ model InventoryMovement {
 }
 
 model Assignment {
-  id          String    @id @default(uuid()) @db.Uuid
-  assetId     String    @db.Uuid
-  personId    String?   @db.Uuid
-  personName  String    @db.VarChar(150)
-  createdById String    @db.Uuid
-  endedById   String?   @db.Uuid
-  startedAt   DateTime
-  endedAt     DateTime?
-  createdAt   DateTime  @default(now())
-  asset       Asset     @relation(fields: [assetId], references: [id], onDelete: Restrict, onUpdate: Restrict)
-  person      User?     @relation("AssignmentPerson", fields: [personId], references: [id], onDelete: Restrict, onUpdate: Restrict)
-  createdBy   User      @relation("AssignmentCreatedBy", fields: [createdById], references: [id], onDelete: Restrict, onUpdate: Restrict)
-  endedBy     User?     @relation("AssignmentEndedBy", fields: [endedById], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  id                    String                  @id @default(uuid()) @db.Uuid
+  assetId               String                  @db.Uuid
+  personId              String?                 @db.Uuid
+  personName            String?                 @db.VarChar(150)
+  recipientType         AssignmentRecipientType @default(PERSON)
+  officeName            String?                 @db.VarChar(160)
+  assignmentType        AssignmentType          @default(STANDARD)
+  expectedReturnAt      DateTime?
+  ticketReference       String?                 @db.VarChar(160)
+  otReference           String?                 @db.VarChar(160)
+  notes                 String?                 @db.Text
+  returnTicketReference String?                 @db.VarChar(160)
+  returnOtReference     String?                 @db.VarChar(160)
+  returnNotes           String?                 @db.Text
+  returnStatus          AssetStatus?
+  returnRecordedAt      DateTime?
+  createdById           String?                 @db.Uuid
+  importedHistory       Boolean                 @default(false)
+  endedById             String?                 @db.Uuid
+  startedAt             DateTime
+  endedAt               DateTime?
+  createdAt             DateTime                @default(now())
+  asset                 Asset                   @relation(fields: [assetId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  person                User?                   @relation("AssignmentPerson", fields: [personId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  createdBy             User?                   @relation("AssignmentCreatedBy", fields: [createdById], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  endedBy               User?                   @relation("AssignmentEndedBy", fields: [endedById], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  importHistory         ImportAssignmentItem?
+  groupImportHistory    ImportGroupAssignmentItem?
 
   @@index([assetId, endedAt])
   @@index([personId, endedAt])
@@ -217,4 +299,676 @@ model Session {
 
   @@index([userId, expiresAt])
   @@index([expiresAt])
+}
+
+model ImportBatch {
+  id                     String                 @id @default(uuid()) @db.Uuid
+  previewId              String                 @unique @db.VarChar(64)
+  sourceFileName         String                 @db.VarChar(255)
+  sourceHash             String                 @db.VarChar(64)
+  payloadDigest          String                 @db.VarChar(64)
+  databaseSnapshotDigest String                 @db.VarChar(64)
+  rulesVersion           String                 @db.VarChar(100)
+  asOf                   String                 @db.VarChar(10)
+  workbook               Json
+  preview                Json
+  version                Int                    @default(1)
+  targetCount            Int
+  createdById            String                 @db.Uuid
+  createdAt              DateTime               @default(now())
+  updatedAt              DateTime               @updatedAt
+  createdBy              User                   @relation(fields: [createdById], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  decisions              ImportReviewDecision[]
+  applications           ImportApplication[]
+  sourceRevisions        ImportSourceRevision[]
+  historyCaptures        ImportHistoryCapture[]
+  identityGroupReviews   ImportIdentityGroupReview[]
+  identityGroupApplications ImportIdentityGroupApplication[]
+
+  groupRetirements ImportGroupRetirementApplication[]
+  groupRetirementDocuments ImportGroupRetirementDocument[]
+
+  @@index([createdAt, id])
+  @@index([sourceHash])
+}
+
+model ImportReviewDecision {
+  id              String                 @id @default(uuid()) @db.Uuid
+  batchId         String                 @db.Uuid
+  batchVersion    Int
+  sourceRevision  Int                    @default(0)
+  requestId       String                 @db.Uuid
+  targetType      ImportReviewTargetType
+  targetId        String                 @db.VarChar(64)
+  action          ImportReviewAction
+  linkedAssetId   String?                @db.Uuid
+  note            String                 @db.VarChar(2000)
+  reviewedById    String                 @db.Uuid
+  createdAt       DateTime               @default(now())
+  batch           ImportBatch            @relation(fields: [batchId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  linkedAsset     Asset?                 @relation(fields: [linkedAssetId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  reviewedBy      User                   @relation(fields: [reviewedById], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  applicationItems ImportApplicationItem[]
+
+  @@unique([batchId, batchVersion])
+  @@unique([batchId, requestId])
+  @@index([batchId, targetType, targetId, batchVersion(sort: Desc)])
+}
+
+model ImportApplication {
+  id           String   @id @default(uuid()) @db.Uuid
+  batchId      String   @db.Uuid
+  batchVersion Int
+  requestId    String   @db.Uuid
+  requestDigest String  @db.VarChar(64)
+  planId       String   @unique @db.VarChar(64)
+  sourceHash   String   @db.VarChar(64)
+  plan         Json
+  appliedById  String   @db.Uuid
+  createdAt    DateTime @default(now())
+  batch        ImportBatch @relation(fields: [batchId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  appliedBy    User @relation(fields: [appliedById], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  items        ImportApplicationItem[]
+
+  @@unique([batchId, requestId])
+  @@index([batchId, createdAt, id])
+}
+
+model ImportApplicationItem {
+  id            String @id @default(uuid()) @db.Uuid
+  applicationId String @db.Uuid
+  candidateId   String @db.VarChar(64)
+  sourceHash    String @db.VarChar(64)
+  decisionId    String @db.Uuid
+  assetId       String @db.Uuid
+  operation     Json
+  result        Json
+  application   ImportApplication @relation(fields: [applicationId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  decision      ImportReviewDecision @relation(fields: [decisionId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  asset         Asset @relation(fields: [assetId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@unique([sourceHash, candidateId])
+  @@unique([applicationId, candidateId])
+  @@index([assetId])
+}
+
+model ImportSourceRevision {
+  id                   String @id @default(uuid()) @db.Uuid
+  batchId              String @db.Uuid
+  revision             Int
+  expectedBatchVersion Int
+  requestId            String @db.Uuid
+  requestDigest        String @db.VarChar(64)
+  note                 String @db.VarChar(2000)
+  evidenceReference    String @db.VarChar(500)
+  changes              Json
+  reviewedById         String @db.Uuid
+  createdAt            DateTime @default(now())
+  batch                ImportBatch @relation(fields: [batchId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  reviewedBy           User @relation(fields: [reviewedById], references: [id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@unique([batchId, revision])
+  @@unique([batchId, requestId])
+}
+
+model ImportHistoryCapture {
+  id                     String @id @default(uuid()) @db.Uuid
+  batchId                String @db.Uuid
+  batchVersion           Int
+  sourceRevision         Int
+  sourceHash             String @db.VarChar(64)
+  requestId              String @db.Uuid
+  requestDigest          String @db.VarChar(64)
+  historyPreviewId       String @db.VarChar(64)
+  rulesVersion           String @db.VarChar(100)
+  note                   String @db.VarChar(2000)
+  evidenceReference      String @db.VarChar(500)
+  selection              Json
+  capturedById           String @db.Uuid
+  capturedAt             DateTime @default(now())
+  batch                  ImportBatch @relation(fields: [batchId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  capturedBy             User @relation(fields: [capturedById], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  items                  ImportHistoricalEvidence[]
+
+  @@unique([batchId, requestId])
+  @@index([batchId, capturedAt, id])
+}
+
+model ImportHistoricalEvidence {
+  id                     String @id @default(uuid()) @db.Uuid
+  captureId              String @db.Uuid
+  sourceHash             String @db.VarChar(64)
+  recordId               String @db.VarChar(64)
+  candidateId            String @db.VarChar(64)
+  kind                   String @db.VarChar(40)
+  effectiveDay           String? @db.VarChar(10)
+  assetId                String? @db.Uuid
+  snapshot               Json
+  capturedAt             DateTime @default(now())
+  capture                ImportHistoryCapture @relation(fields: [captureId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  asset                  Asset? @relation(fields: [assetId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  assignmentUse          ImportAssignmentEvidenceUse?
+  amendments             ImportEvidenceAmendment[]
+  retirementUse          ImportRetirementApplication?
+  groupHistoryLink       ImportGroupHistoryLink?
+  groupAssignmentUse     ImportGroupAssignmentEvidenceUse?
+  groupRetirementUse     ImportGroupRetirementApplication?
+  groupRetirementDocuments ImportGroupRetirementDocument[]
+  retirementReconciliations ImportRetirementReconciliation[]
+
+  @@unique([sourceHash, recordId, kind])
+  @@unique([captureId, recordId, kind])
+  @@index([assetId, capturedAt, id])
+}
+
+model ImportGroupRetirementDocument {
+  id                   String @id @default(uuid()) @db.Uuid
+  batchId              String @db.Uuid
+  reviewId             String @db.Uuid
+  decisionId           String @db.Uuid
+  groupId              String @db.Uuid
+  groupKey             String @db.VarChar(64)
+  sourceHash           String @db.VarChar(64)
+  assetId              String @db.Uuid
+  evidenceId           String @db.Uuid
+  evidenceVersion      Int
+  amendmentId          String? @db.Uuid
+  sourceRevision       Int
+  requestId            String @db.Uuid
+  requestDigest        String @db.VarChar(64)
+  planId               String @unique @db.VarChar(64)
+  rulesVersion         String @db.VarChar(100)
+  plan                 Json
+  recordedById         String @db.Uuid
+  recordedAt           DateTime @default(now())
+  createdTransactionId String @default(dbgenerated("(pg_current_xact_id())::text")) @db.Text
+  batch                ImportBatch @relation(fields: [batchId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  review               ImportIdentityGroupReview @relation(fields: [reviewId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  decision             ImportIdentityGroupDecision @relation(fields: [decisionId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  asset                Asset @relation(fields: [assetId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  evidence             ImportHistoricalEvidence @relation(fields: [evidenceId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  amendment            ImportEvidenceAmendment? @relation(fields: [amendmentId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  recordedBy           User @relation(fields: [recordedById], references: [id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@unique([reviewId, requestId])
+  @@unique([evidenceId, evidenceVersion])
+  @@index([reviewId, recordedAt, id])
+  @@index([createdTransactionId])
+}
+
+model ImportRetirementReconciliation {
+  id                   String @id @default(uuid()) @db.Uuid
+  assetId              String @db.Uuid
+  evidenceId           String @db.Uuid
+  evidenceVersion      Int
+  amendmentId          String? @db.Uuid
+  sourceRevision       Int
+  requestId            String @db.Uuid
+  requestDigest        String @db.VarChar(64)
+  planId               String @unique @db.VarChar(64)
+  rulesVersion         String @db.VarChar(100)
+  plan                 Json
+  recordedById         String @db.Uuid
+  recordedAt           DateTime @default(now())
+  createdTransactionId String @default(dbgenerated("(pg_current_xact_id())::text")) @db.Text
+  asset                Asset @relation(fields: [assetId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  evidence             ImportHistoricalEvidence @relation(fields: [evidenceId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  amendment            ImportEvidenceAmendment? @relation(fields: [amendmentId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  recordedBy           User @relation(fields: [recordedById], references: [id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@unique([assetId, requestId])
+  @@unique([evidenceId, evidenceVersion])
+  @@index([assetId, recordedAt, id])
+  @@index([createdTransactionId])
+}
+
+model ImportEvidenceAmendment {
+  id                  String @id @default(uuid()) @db.Uuid
+  evidenceId          String @db.Uuid
+  version             Int
+  previousAmendmentId String? @db.Uuid
+  batchVersion        Int
+  sourceRevision      Int
+  requestId           String @db.Uuid
+  requestDigest       String @db.VarChar(64)
+  amendmentPlanId     String @db.VarChar(64)
+  rulesVersion        String @db.VarChar(100)
+  assetId             String? @db.Uuid
+  effectiveDay        String? @db.VarChar(10)
+  snapshot            Json
+  note                String @db.VarChar(2000)
+  evidenceReference   String @db.VarChar(500)
+  amendedById         String @db.Uuid
+  amendedAt           DateTime @default(now())
+  evidence            ImportHistoricalEvidence @relation(fields: [evidenceId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  asset               Asset? @relation(fields: [assetId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  amendedBy           User @relation(fields: [amendedById], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  retirementApplications ImportRetirementApplication[]
+  groupRetirements        ImportGroupRetirementApplication[]
+  groupRetirementDocuments ImportGroupRetirementDocument[]
+  retirementReconciliations ImportRetirementReconciliation[]
+  groupHistoryLinks      ImportGroupHistoryLink[]
+
+  @@unique([evidenceId, version])
+  @@unique([evidenceId, requestId])
+  @@index([assetId, evidenceId, version])
+}
+
+model ImportAssignmentApplication {
+  id             String @id @default(uuid()) @db.Uuid
+  assetId        String @db.Uuid
+  requestId      String @db.Uuid
+  requestDigest  String @db.VarChar(64)
+  planId         String @unique @db.VarChar(64)
+  rulesVersion   String @db.VarChar(100)
+  plan           Json
+  appliedById    String @db.Uuid
+  appliedAt      DateTime @default(now())
+  asset          Asset @relation(fields: [assetId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  appliedBy      User @relation(fields: [appliedById], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  items          ImportAssignmentItem[]
+
+  @@unique([assetId, requestId])
+  @@index([assetId, appliedAt, id])
+}
+
+model ImportAssignmentItem {
+  id               String @id @default(uuid()) @db.Uuid
+  applicationId    String @db.Uuid
+  periodId         String @db.Uuid
+  assignmentId     String @unique @db.Uuid
+  startEvidenceId  String @db.Uuid
+  endEvidenceId    String @db.Uuid
+  snapshot         Json
+  application      ImportAssignmentApplication @relation(fields: [applicationId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  assignment       Assignment @relation(fields: [assignmentId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  evidenceUses     ImportAssignmentEvidenceUse[]
+  corrections      ImportAssignmentCorrection[]
+
+  @@unique([applicationId, periodId])
+  @@index([startEvidenceId])
+  @@index([endEvidenceId])
+}
+
+model ImportAssignmentCorrection {
+  id                   String @id @default(uuid()) @db.Uuid
+  itemId               String @db.Uuid
+  version              Int
+  previousId           String? @unique @db.Uuid
+  requestId            String @db.Uuid
+  requestDigest        String @db.VarChar(64)
+  correctionPlanId     String @unique @db.VarChar(64)
+  rulesVersion         String @db.VarChar(100)
+  plan                 Json
+  reason               String @db.Text
+  supportingReference  String @db.Text
+  assetSnapshot        Json
+  custodySnapshot      Json
+  correctedById        String @db.Uuid
+  correctedAt          DateTime @default(now())
+  createdTransactionId String @default(dbgenerated("(pg_current_xact_id())::text")) @db.VarChar(20)
+  item                 ImportAssignmentItem @relation(fields: [itemId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  previous             ImportAssignmentCorrection? @relation("LegacyCorrectionChain", fields: [previousId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  next                 ImportAssignmentCorrection? @relation("LegacyCorrectionChain")
+  correctedBy          User @relation(fields: [correctedById], references: [id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@unique([itemId, version])
+  @@unique([itemId, requestId])
+  @@index([createdTransactionId])
+}
+
+model ImportAssignmentEvidenceUse {
+  evidenceId       String @id @db.Uuid
+  itemId           String @db.Uuid
+  endpoint         String @db.VarChar(5)
+  evidence         ImportHistoricalEvidence @relation(fields: [evidenceId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  item             ImportAssignmentItem @relation(fields: [itemId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@unique([itemId, endpoint])
+}
+
+model ImportRetirementApplication {
+  id               String @id @default(uuid()) @db.Uuid
+  assetId          String @unique @db.Uuid
+  evidenceId       String @unique @db.Uuid
+  evidenceVersion  Int
+  amendmentId      String? @db.Uuid
+  sourceRevision   Int
+  decommissionedAt DateTime
+  requestId        String @db.Uuid
+  requestDigest    String @db.VarChar(64)
+  planId           String @unique @db.VarChar(64)
+  rulesVersion     String @db.VarChar(100)
+  plan             Json
+  result           Json
+  appliedById      String @db.Uuid
+  appliedAt        DateTime @default(now())
+  asset            Asset @relation(fields: [assetId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  evidence         ImportHistoricalEvidence @relation(fields: [evidenceId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  amendment        ImportEvidenceAmendment? @relation(fields: [amendmentId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  appliedBy        User @relation(fields: [appliedById], references: [id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@unique([assetId, requestId])
+  @@index([assetId, appliedAt, id])
+}
+
+model ImportIdentityGroupReview {
+  id             String @id @default(uuid()) @db.Uuid
+  batchId        String @db.Uuid
+  batchVersion   Int
+  sourceRevision Int
+  sourceHash     String @db.VarChar(64)
+  requestId      String @db.Uuid
+  requestDigest  String @db.VarChar(64)
+  planId         String @db.VarChar(64)
+  plan           Json
+  reviewedById   String @db.Uuid
+  createdAt      DateTime @default(now())
+  batch          ImportBatch @relation(fields: [batchId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  reviewedBy     User @relation(fields: [reviewedById], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  rows           ImportIdentityGroupRow[]
+  release        ImportIdentityGroupRelease?
+  decisions      ImportIdentityGroupDecision[]
+  applications   ImportIdentityGroupApplication[]
+  retirements    ImportGroupRetirementApplication[]
+  retirementDocuments ImportGroupRetirementDocument[]
+
+  @@unique([batchId, requestId])
+  @@index([batchId, createdAt, id])
+}
+
+model ImportIdentityGroupRow {
+  reviewId            String @db.Uuid
+  recordId            String @db.VarChar(64)
+  sourceHash          String @db.VarChar(64)
+  originalCandidateId String @db.VarChar(64)
+  groupId             String @db.Uuid
+  snapshot            Json
+  isReserved          Boolean @default(true)
+  review              ImportIdentityGroupReview @relation(fields: [reviewId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  applicationUse      ImportIdentityGroupRowUse?
+  retirementUse       ImportGroupRetirementRowUse?
+
+  @@id([reviewId, recordId])
+  @@index([sourceHash, recordId])
+  // SQL migration also enforces unique (sourceHash, recordId) WHERE isReserved.
+  @@index([sourceHash, originalCandidateId])
+}
+
+model ImportIdentityGroupRelease {
+  id            String @id @default(uuid()) @db.Uuid
+  reviewId      String @unique @db.Uuid
+  requestId     String @db.Uuid
+  requestDigest String @db.VarChar(64)
+  note          String @db.VarChar(2000)
+  releasedById  String @db.Uuid
+  createdAt     DateTime @default(now())
+  review        ImportIdentityGroupReview @relation(fields: [reviewId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  releasedBy    User @relation(fields: [releasedById], references: [id], onDelete: Restrict, onUpdate: Restrict)
+}
+
+model ImportIdentityGroupDecision {
+  id                String @id @default(uuid()) @db.Uuid
+  reviewId          String @db.Uuid
+  version           Int
+  requestId         String @db.Uuid
+  requestDigest     String @db.VarChar(64)
+  rulesVersion      String @db.VarChar(100)
+  groupId           String @db.Uuid
+  groupKey          String @db.VarChar(64)
+  batchVersion      Int
+  sourceRevision    Int
+  projectionId      String @db.VarChar(64)
+  projection        Json
+  action            ImportReviewAction
+  linkedAssetId     String? @db.Uuid
+  note              String @db.VarChar(2000)
+  evidenceReference String @db.VarChar(500)
+  evidenceReviews   Json
+  reviewedById      String @db.Uuid
+  createdAt         DateTime @default(now())
+  review            ImportIdentityGroupReview @relation(fields: [reviewId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  reviewedBy        User @relation(fields: [reviewedById], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  linkedAsset       Asset? @relation(fields: [linkedAssetId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  applicationItems  ImportIdentityGroupApplicationItem[]
+  retirements       ImportGroupRetirementApplication[]
+  retirementDocuments ImportGroupRetirementDocument[]
+
+  @@unique([reviewId, requestId])
+  @@unique([reviewId, version])
+  @@index([reviewId, groupKey, version])
+}
+
+model ImportGroupRetirementApplication {
+  id                   String @id @default(uuid()) @db.Uuid
+  batchId              String @db.Uuid
+  reviewId             String @db.Uuid
+  decisionId           String @db.Uuid
+  groupId              String @db.Uuid
+  groupKey             String @db.VarChar(64)
+  sourceHash           String @db.VarChar(64)
+  assetId              String @unique @db.Uuid
+  evidenceId           String @unique @db.Uuid
+  evidenceVersion      Int
+  amendmentId          String? @db.Uuid
+  sourceRevision       Int
+  decommissionedAt     DateTime
+  requestId            String @db.Uuid
+  requestDigest        String @db.VarChar(64)
+  planId               String @unique @db.VarChar(64)
+  rulesVersion         String @db.VarChar(100)
+  plan                 Json
+  assetSnapshot        Json
+  result               Json
+  appliedById          String @db.Uuid
+  appliedAt            DateTime @default(now())
+  createdTransactionId String @default(dbgenerated("(pg_current_xact_id())::text")) @db.VarChar(20)
+  batch                ImportBatch @relation(fields: [batchId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  review               ImportIdentityGroupReview @relation(fields: [reviewId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  decision             ImportIdentityGroupDecision @relation(fields: [decisionId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  asset                Asset @relation(fields: [assetId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  evidence             ImportHistoricalEvidence @relation(fields: [evidenceId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  amendment            ImportEvidenceAmendment? @relation(fields: [amendmentId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  appliedBy            User @relation(fields: [appliedById], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  rows                 ImportGroupRetirementRowUse[]
+
+  @@unique([reviewId, requestId])
+  @@index([reviewId, appliedAt, id])
+  @@index([createdTransactionId])
+}
+
+model ImportGroupRetirementRowUse {
+  sourceHash          String @db.VarChar(64)
+  recordId            String @db.VarChar(64)
+  originalCandidateId String @db.VarChar(64)
+  reviewId            String @db.Uuid
+  applicationId       String @db.Uuid
+  row                 ImportIdentityGroupRow @relation(fields: [reviewId, recordId], references: [reviewId, recordId], onDelete: Restrict, onUpdate: Restrict)
+  application         ImportGroupRetirementApplication @relation(fields: [applicationId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@id([sourceHash, recordId])
+  @@unique([reviewId, recordId])
+  @@index([sourceHash, originalCandidateId])
+  @@index([applicationId])
+}
+
+model ImportIdentityGroupApplication {
+  id              String @id @default(uuid()) @db.Uuid
+  batchId         String @db.Uuid
+  reviewId        String @db.Uuid
+  sourceHash      String @db.VarChar(64)
+  requestId       String @db.Uuid
+  requestDigest   String @db.VarChar(64)
+  planId          String @unique @db.VarChar(64)
+  plan            Json
+  appliedById     String @db.Uuid
+  appliedAt       DateTime @default(now())
+  batch           ImportBatch @relation(fields: [batchId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  review          ImportIdentityGroupReview @relation(fields: [reviewId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  appliedBy       User @relation(fields: [appliedById], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  items           ImportIdentityGroupApplicationItem[]
+
+  @@unique([reviewId, requestId])
+  @@index([reviewId, appliedAt, id])
+}
+
+model ImportIdentityGroupApplicationItem {
+  id              String @id @default(uuid()) @db.Uuid
+  applicationId   String @db.Uuid
+  groupKey        String @db.VarChar(64)
+  groupId         String @db.Uuid
+  decisionId      String @db.Uuid
+  assetId         String @db.Uuid
+  operation       Json
+  result          Json
+  application     ImportIdentityGroupApplication @relation(fields: [applicationId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  decision        ImportIdentityGroupDecision @relation(fields: [decisionId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  asset           Asset @relation(fields: [assetId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  rows            ImportIdentityGroupRowUse[]
+  historyApplications ImportGroupHistoryApplication[]
+  assignmentApplications ImportGroupAssignmentApplication[]
+
+  @@unique([applicationId, groupKey])
+  @@unique([applicationId, assetId])
+  @@index([assetId])
+}
+
+model ImportIdentityGroupRowUse {
+  sourceHash          String @db.VarChar(64)
+  recordId            String @db.VarChar(64)
+  originalCandidateId String @db.VarChar(64)
+  reviewId            String @db.Uuid
+  itemId              String @db.Uuid
+  row                 ImportIdentityGroupRow @relation(fields: [reviewId, recordId], references: [reviewId, recordId], onDelete: Restrict, onUpdate: Restrict)
+  item                ImportIdentityGroupApplicationItem @relation(fields: [itemId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@id([sourceHash, recordId])
+  @@unique([reviewId, recordId])
+  @@index([sourceHash, originalCandidateId])
+  @@index([itemId])
+}
+
+model ImportGroupHistoryApplication {
+  id            String @id @default(uuid()) @db.Uuid
+  itemId        String @db.Uuid
+  requestId     String @db.Uuid
+  requestDigest String @db.VarChar(64)
+  planId        String @unique @db.VarChar(64)
+  rulesVersion  String @db.VarChar(100)
+  plan          Json
+  appliedById   String @db.Uuid
+  appliedAt     DateTime @default(now())
+  item          ImportIdentityGroupApplicationItem @relation(fields: [itemId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  appliedBy     User @relation(fields: [appliedById], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  links         ImportGroupHistoryLink[]
+
+  @@unique([itemId, requestId])
+  @@index([itemId, appliedAt, id])
+}
+
+model ImportGroupHistoryLink {
+  id                   String @id @default(uuid()) @db.Uuid
+  historyApplicationId String @db.Uuid
+  evidenceId           String @unique @db.Uuid
+  assetId              String @db.Uuid
+  version              Int @default(1)
+  evidenceVersion      Int
+  amendmentId          String? @db.Uuid
+  sourceRevision       Int
+  operation            Json
+  projection           Json
+  application          ImportGroupHistoryApplication @relation(fields: [historyApplicationId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  evidence             ImportHistoricalEvidence @relation(fields: [evidenceId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  asset                Asset @relation(fields: [assetId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  amendment            ImportEvidenceAmendment? @relation(fields: [amendmentId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  assignmentUse        ImportGroupAssignmentEvidenceUse?
+  assignmentStarts    ImportGroupAssignmentItem[] @relation("GroupAssignmentStart")
+  assignmentEnds      ImportGroupAssignmentItem[] @relation("GroupAssignmentEnd")
+
+  @@index([historyApplicationId])
+  @@index([assetId, id])
+}
+
+model ImportGroupAssignmentApplication {
+  id              String @id @default(uuid()) @db.Uuid
+  itemId          String @db.Uuid
+  assetId         String @db.Uuid
+  requestId       String @db.Uuid
+  requestDigest   String @db.VarChar(64)
+  planId          String @unique @db.VarChar(64)
+  rulesVersion    String @db.VarChar(100)
+  plan            Json
+  assetSnapshot   Json
+  custodySnapshot Json
+  appliedById     String @db.Uuid
+  appliedAt       DateTime @default(now())
+  createdTransactionId String @default(dbgenerated("(pg_current_xact_id())::text")) @db.VarChar(20)
+  item            ImportIdentityGroupApplicationItem @relation(fields: [itemId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  asset           Asset @relation(fields: [assetId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  appliedBy       User @relation(fields: [appliedById], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  items           ImportGroupAssignmentItem[]
+
+  @@unique([itemId, requestId])
+  @@index([itemId, appliedAt, id])
+  @@index([createdTransactionId, assetId])
+  @@index([assetId])
+}
+
+model ImportGroupAssignmentItem {
+  id            String @id @default(uuid()) @db.Uuid
+  applicationId String @db.Uuid
+  periodId      String @db.Uuid
+  assignmentId  String @unique @db.Uuid
+  startLinkId   String @db.Uuid
+  endLinkId     String @db.Uuid
+  snapshot      Json
+  corrections   ImportGroupAssignmentCorrection[]
+  application   ImportGroupAssignmentApplication @relation(fields: [applicationId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  assignment    Assignment @relation(fields: [assignmentId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  startLink     ImportGroupHistoryLink @relation("GroupAssignmentStart", fields: [startLinkId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  endLink       ImportGroupHistoryLink @relation("GroupAssignmentEnd", fields: [endLinkId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  evidenceUses  ImportGroupAssignmentEvidenceUse[]
+
+  @@unique([applicationId, periodId])
+  @@index([startLinkId])
+  @@index([endLinkId])
+}
+
+model ImportGroupAssignmentCorrection {
+  id                   String @id @default(uuid()) @db.Uuid
+  itemId               String @db.Uuid
+  version              Int
+  previousId           String? @unique @db.Uuid
+  requestId            String @db.Uuid
+  requestDigest        String @db.VarChar(64)
+  correctionPlanId     String @unique @db.VarChar(64)
+  rulesVersion         String @db.VarChar(100)
+  plan                 Json
+  reason               String @db.Text
+  supportingReference  String @db.Text
+  assetSnapshot        Json
+  custodySnapshot      Json
+  correctedById        String @db.Uuid
+  correctedAt          DateTime @default(now())
+  createdTransactionId String @default(dbgenerated("(pg_current_xact_id())::text")) @db.VarChar(20)
+  item                 ImportGroupAssignmentItem @relation(fields: [itemId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  correctedBy          User @relation(fields: [correctedById], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  previous             ImportGroupAssignmentCorrection? @relation("GroupCorrectionChain", fields: [previousId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  next                 ImportGroupAssignmentCorrection? @relation("GroupCorrectionChain")
+
+  @@unique([itemId, version])
+  @@unique([itemId, requestId])
+  @@index([createdTransactionId])
+}
+
+model ImportGroupAssignmentEvidenceUse {
+  evidenceId String @id @db.Uuid
+  linkId     String @unique @db.Uuid
+  itemId     String @db.Uuid
+  endpoint   String @db.VarChar(5)
+  evidence   ImportHistoricalEvidence @relation(fields: [evidenceId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  link       ImportGroupHistoryLink @relation(fields: [linkId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  item       ImportGroupAssignmentItem @relation(fields: [itemId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@unique([itemId, endpoint])
 }

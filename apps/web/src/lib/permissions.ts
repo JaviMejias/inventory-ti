@@ -9,3 +9,4 @@ export function canManageCatalog(role: AppRole): boolean { return role === 'JEFE
 export function canManageAssets(role: AppRole): boolean { return role === 'JEFE' || role === 'COORDINADOR'; }
 export function canDecommissionAssets(role: AppRole): boolean { return role === 'JEFE'; }
 export function canReviewCorrections(role: AppRole): boolean { return role === 'JEFE'; }
+export function canReviewImports(role: AppRole): boolean { return role === 'JEFE'; }

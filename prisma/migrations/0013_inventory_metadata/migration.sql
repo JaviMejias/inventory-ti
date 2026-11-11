@@ -1,0 +1,18 @@
+BEGIN;
+
+ALTER TABLE "Product"
+  ADD COLUMN "equipmentType" VARCHAR(100),
+  ADD COLUMN "brand" VARCHAR(100),
+  ADD COLUMN "model" VARCHAR(160);
+
+ALTER TABLE "Asset"
+  ADD COLUMN "technicalCondition" VARCHAR(100),
+  ADD COLUMN "usagePurpose" VARCHAR(100),
+  ADD COLUMN "location" VARCHAR(160),
+  ADD COLUMN "sector" VARCHAR(100),
+  ADD COLUMN "ipAddress" VARCHAR(45),
+  ADD COLUMN "hostname" VARCHAR(160),
+  ADD COLUMN "loanCode" VARCHAR(100),
+  ADD COLUMN "notes" TEXT;
+
+COMMIT;

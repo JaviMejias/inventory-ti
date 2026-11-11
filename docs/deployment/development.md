@@ -17,11 +17,11 @@ pnpm --version
 
 ```bash
 # 1. Clone the repository
-git clone <repo-url> inventory-ti
+git clone "$INVENTORY_REPOSITORY_URL" inventory-ti
 cd inventory-ti
 
 # 2. Install dependencies
-pnpm install
+pnpm install --frozen-lockfile
 
 # 3. Configure environment
 cp .env.example .env
@@ -39,6 +39,8 @@ pnpm bootstrap:admin
 # 6. Start both API and web in development mode
 pnpm dev
 ```
+
+Set `INVENTORY_REPOSITORY_URL` to the project's clone URL before the example. The API scripts load `.env` from the repository root, not `apps/api/.env`. Bootstrap requests username, display name, phone, email, password and confirmation; see [users.md](users.md).
 
 ## Services
 
@@ -75,13 +77,13 @@ Adjust the username, password, host, and port to match your PostgreSQL installat
 
 ## Running tests
 
-Tests use the Node built-in test runner and require a running PostgreSQL instance. Tests create their own isolated data with random suffixes and clean up after themselves.
+Tests use the Node built-in runner and a **new disposable PostgreSQL database** per launch. The role must connect to the server's `postgres` maintenance database and have `CREATEDB`. The launcher migrates and runs fixtures only inside the generated `inventory_ti_test_<uuid>` database, then drops that database; it never uses the supplied application database as the fixture target.
 
 ```bash
 pnpm test
 ```
 
-The API test script loads `DATABASE_URL` from the repository-root `.env` automatically. An explicitly exported `DATABASE_URL` still takes precedence, which is useful for CI or a separate test database.
+The launcher loads the root `.env`. `TEST_DATABASE_URL` optionally supplies separate test-server credentials, otherwise it uses those in `DATABASE_URL`; exported values take precedence. Do not grant the production runtime role `CREATEDB` just to run tests. Direct integration-file invocation without the isolation marker fails. SIGKILL may leave a uniquely named temporary database for operator inspection; see [testing.md](../technical/testing.md#database-isolation).
 
 ## First login
 

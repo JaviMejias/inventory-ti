@@ -1,3 +1,5 @@
+import './require-test-database.js';
+
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { after, before, test } from 'node:test';
@@ -174,12 +176,12 @@ test('decommission is JEFE-only, terminal and serialized under concurrency', asy
 
 test('missing or invalid CSRF rejects asset mutations without side effects', async () => {
   const jefe = await login(users.jefe.username);
-  const countBefore = await prisma.asset.count();
+  const countBefore = await prisma.asset.count({ where: { productId: assetProduct.id } });
   const missing = await app.inject({ method: 'POST', url: '/assets', headers: { cookie: jefe }, payload: { productId: assetProduct.id, assetTag: `NO-CSRF-${suffix}` } });
   const invalid = await app.inject({ method: 'POST', url: '/assets', headers: { cookie: jefe, 'x-csrf-token': 'invalid' }, payload: { productId: assetProduct.id, assetTag: `BAD-CSRF-${suffix}` } });
   assert.equal(missing.statusCode, 403);
   assert.equal(invalid.statusCode, 403);
-  assert.equal(await prisma.asset.count(), countBefore);
+  assert.equal(await prisma.asset.count({ where: { productId: assetProduct.id } }), countBefore);
 });
 
 test('asset status changes roll back when AuditLog creation fails', async () => {
@@ -191,6 +193,23 @@ test('asset status changes roll back when AuditLog creation fails', async () => 
   assert.equal(statusResponse.statusCode, 500);
   assert.equal((await prisma.asset.findUniqueOrThrow({ where: { id: created.id } })).status, AssetStatus.AVAILABLE);
   await faultyApp.close();
+});
+
+test('structured asset metadata rolls back when audit persistence fails', async () => {
+  const jefe = await login(users.jefe.username);
+  const created = JSON.parse((await createAsset(jefe, { location: 'Bodega 2', notes: 'Original metadata' })).body).asset;
+  const faultyApp = buildApp(databaseWithFailingAudit());
+  try {
+    const token = await csrf(jefe);
+    const response = await faultyApp.inject({ method: 'PATCH', url: `/assets/${created.id}`, headers: { cookie: jefe, 'x-csrf-token': token }, payload: { location: 'CE', notes: 'Must roll back' } });
+    assert.equal(response.statusCode, 500);
+    const stored = await prisma.asset.findUniqueOrThrow({ where: { id: created.id } });
+    assert.equal(stored.location, 'Bodega 2');
+    assert.equal(stored.notes, 'Original metadata');
+    assert.equal(await prisma.auditLog.count({ where: { entityId: created.id, action: 'ASSET_UPDATED' } }), 0);
+  } finally {
+    await faultyApp.close();
+  }
 });
 
 test('asset listing supports all approved filters and detail contains no user secrets', async () => {

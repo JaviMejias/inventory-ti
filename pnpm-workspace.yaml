@@ -1,6 +1,9 @@
 packages:
   - apps/*
   - packages/*
+overrides:
+  # Security fix for Prisma 6's config loader; revisit when upgrading Prisma.
+  '@prisma/config@6.19.3>deepmerge-ts': 8.0.0
 allowBuilds:
   '@prisma/client': true
   '@prisma/engines': true

@@ -10,7 +10,7 @@ Related documents:
 ## 1. General rules
 
 1. Backend authorization is **authoritative**; frontend restrictions are UX only.
-2. Every inventory operation runs through: **validate → authorize → transaction → commit → realtime event**.
+2. Every inventory operation runs through: **validate → authorize → transaction → commit → HTTP response**. Realtime publishing is planned, not implemented.
 3. Movement creation and materialized stock update are **atomic**.
 4. Movements are **immutable** after creation.
 5. Roles: `JEFE`, `COORDINADOR`, `SOPORTE` (see [roles.md](roles.md)).
@@ -36,7 +36,7 @@ update materialized current stock
         ↓
 commit
         ↓
-publish realtime event
+return HTTP response
 ```
 
 Failure at any step before commit leaves **no partial state** and publishes **no success event**. See [technical/realtime.md](../technical/realtime.md).
@@ -45,11 +45,11 @@ Failure at any step before commit leaves **no partial state** and publishes **no
 
 **INITIAL** — initializes stock for a product. Only one initial movement is permitted per product.
 
-- Authorized by: operational authorizations per role matrix (inventory operations).
+- Authorized by: `JEFE` only.
 
 **ENTRY (receive)** — stock is received/added.
 
-**EXIT (issue)** — stock is issued/removed. Availability-based: for asset-based products the operation refers to specific assets; for consumables it decreases current quantity.
+**EXIT (issue)** — quantity stock is issued/removed. These routes accept `QUANTITY` products only; asset assignment/status uses separate routes and never modifies quantitative stock.
 
 **RETURN** — stock is returned (received back).
 
@@ -168,10 +168,10 @@ See [roles.md](roles.md).
 ## 6. Low-stock visibility
 
 - Threshold is product-level.
-- After any committed stock operation, the product's low-stock state (`current stock <= threshold`) is recomputed and surfaced on the dashboard / reporting / notifications where appropriate.
+- Low-stock visibility compares current stock with product threshold (`current stock <= threshold`) through REST reads. No backend notification worker, Notification model or report endpoint currently exists.
 
-## 7. Realtime after commit
+## 7. Realtime after commit (planned)
 
-- Every committed operation publishes a WebSocket event; see [technical/realtime.md](../technical/realtime.md).
+- Current operations return HTTP responses; no WebSocket publisher exists. Future operations may publish events; see [technical/realtime.md](../technical/realtime.md).
 - The event is published **only after** the transaction commits.
 - A client may miss events because of disconnection/process failure and **resyncs via REST** on reconnect.

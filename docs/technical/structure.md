@@ -14,20 +14,22 @@ Related documents:
 ```text
 inventory-ti/
 ├── apps/
-│   ├── web/                # React + Vite + TypeScript + Tailwind PWA
+│   ├── web/                # React + Vite + TypeScript + Tailwind (PWA planned)
 │   │   └── src/
-│   │       ├── features/   # Feature-based: auth, home (catalog/inventory/assets)
-│   │       ├── ui/         # Shared UI primitives (PageShell)
+│   │       ├── features/   # auth/account, home operational views, admin/users
+│   │       ├── ui/         # Shared primitives, layouts, tables, overlays, feedback
+│   │       ├── lib/        # API/error translation, date ranges, page aggregation
 │   │       ├── i18n/       # Translation stubs (es/en)
-│   │       ├── theme/      # Dark mode initialization
+│   │       ├── theme/      # Light/dark/system preference and initialization
 │   │       └── config/     # Environment configuration
 │   └── api/                # Fastify + TypeScript backend
 │       └── src/
-│           ├── auth/       # Authentication module (routes, schemas, service, types)
+│           ├── auth/       # Sessions, activation, user administration, guards/limits
 │           ├── catalog/    # Product catalog module
-│           ├── routes/     # Inventory and asset routes + services
+│           ├── routes/     # Inventory, assets, assignments, corrections, health
 │           ├── config/     # Database and environment configuration
-│           └── lib/        # Shared utilities (errors, password)
+│           ├── scripts/    # Bootstrap and reviewed fixture-account quarantine
+│           └── lib/        # Errors, passwords, integer bounds and product locks
 ├── packages/
 │   └── shared/             # Transport-safe shared concepts only
 ├── prisma/                 # Prisma schema and migrations
@@ -78,6 +80,8 @@ audit/
 
 Notes:
 
+- This list is **conceptual**, not a literal set of current directories/endpoints. Backend code is grouped under `auth/`, `catalog/` and `routes/`; roles are fixed, not a separate administration API. Notifications/realtime and backend dashboard aggregations are planned; audit writes occur inside domain transactions.
+
 - `repairs/` is **not** an MVP implementation module (repair management is out of scope).
 - `offices/` is **not** required as an MVP implementation module (Office is future extensibility).
 - Module boundaries are **domain boundaries**. They do **not** imply excessive abstraction, per-module HTTP servers, or per-module databases. They are logical layers inside the single backend (see [backend.md](backend.md)).
@@ -88,14 +92,14 @@ Notes:
 | --- | --- |
 | auth | Session authentication, login/logout, session validation, CSRF for state-changing requests. |
 | users | User account management (JEFE-only). |
-| roles | Role administration and the role matrix. |
+| roles | Fixed enum and authorization matrix; no separate role-administration endpoint. |
 | products | Product catalog, low-stock threshold. |
 | inventory | Inventory operations (INITIAL/ENTRY/EXIT/RETURN/ADJUSTMENT), movements, materialized stock. |
 | assets | Asset lifecycle and statuses. |
 | assignments | Asset ↔ Person assignments and assignment history. |
 | corrections | Correction workflow (request/review/approve/reject + compensating movement). |
-| notifications | Realtime event publishing and in-app notifications (low-stock, corrections, etc.). |
-| dashboard | Dashboard aggregations. |
+| notifications | Planned realtime publishing/notification persistence, not implemented. |
+| dashboard | Planned backend aggregations; no dedicated endpoint. |
 | audit | AuditLog of user/system actions. |
 
 ## 4. Frontend feature-based organization
@@ -104,27 +108,27 @@ Frontend areas follow features, not layers. Current implementation:
 
 ```text
 apps/web/src/features/
-  auth/               # Authentication (login, session, context)
-  home/               # Main application pages
-    HomePage.tsx      # Session shell, role-aware sections
-    CatalogPage.tsx   # Product catalog management
-    InventoryPage.tsx # Consolidated stock, assets, movements
-    AssetsPage.tsx    # Asset lifecycle management and assignment entry point
-    AssignmentPanel.tsx # Current assignment, return, and history UI
+  auth/
+    auth.tsx           # Sign-in, activation, session provider
+    auth-context.ts    # Authentication context contract
+    AccountPage.tsx    # Inline personal-data editing and password change
+  admin/
+    UsersPage.tsx      # JEFE-only user administration and activation/reset codes
+  home/
+    HomePage.tsx       # Dashboard consultation and drill-down modals
+    dashboard-model.ts # Current snapshot and period movement calculations
+    CatalogPage.tsx    # Products (no category screen)
+    InventoryPage.tsx  # Quantity/asset tabs; history, status and assignments
+    asset-status.ts    # Status labels and role-aware destination options
+    CorrectionsPage.tsx # Requests, direct application and review details
+    correction-model.ts # Final-quantity form semantics
 ```
 
-Planned but not yet implemented:
+`App.tsx` mounts these route owners. `AssetsPage.tsx` and `AssignmentPanel.tsx` remain in the repository but are not separate active routes; current asset and assignment workflows are integrated into InventoryPage. Do not describe retained source files as additional navigation destinations.
 
-```text
-apps/web/src/features/
-  dashboard/          # Dashboard aggregations
-  assignments/        # Reserved for a future dedicated assignment area; current UI lives with AssetsPage
-  corrections/        # Correction workflow
-  reports/            # Report generation
-  users-admin/        # User administration
-```
+Dashboard is an implemented consultation view composed from existing REST reads, not a separately implemented domain module or dedicated aggregation endpoint. Its presence under `home/` does not mean it is still planned. Corrections and Users are also implemented despite not having directories named after every conceptual module.
 
-Shared UI primitives and app infrastructure are separate (`ui/`, `config/`, `i18n/`, `theme/`). See [frontend.md](frontend.md).
+Dedicated report screens, realtime subscriptions, uploads and PWA/offline behavior remain planned. Shared UI and infrastructure are separate (`ui/`, `lib/`, `config/`, `i18n/`, `theme/`). Translation files are stubs, not a complete bilingual UI. See [frontend.md](frontend.md) for route access, dataset loading and the pending SOPORTE/Dashboard policy decision.
 
 ## 5. Boundary rules
 

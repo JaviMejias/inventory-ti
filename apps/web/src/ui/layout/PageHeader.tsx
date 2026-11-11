@@ -16,7 +16,7 @@ export function PageHeader({ title, description, eyebrow, action, meta, classNam
     <header className={cx('app-page-heading', className)}>
       <div>
         {eyebrow && <p className="app-page-kicker">{eyebrow}</p>}
-        <h2>{title}</h2>
+        <h1>{title}</h1>
         {description && <p>{description}</p>}
       </div>
       {(action || meta) && <div className="ui-page-header-side">{meta}{action}</div>}

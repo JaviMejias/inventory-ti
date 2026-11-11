@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useMemo, useState, type FormEvent, type ReactNode } from 'react';
+import { useCallback, useEffect, useId, useRef, useMemo, useState, type FormEvent, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 
 import { formatChilePhone, normalizeChilePhone } from '../../lib/formatting';
@@ -16,9 +16,10 @@ import {
   Field,
   Icon,
   ListFooter,
+  ModuleFilters,
+  ModuleHeader,
   PageContainer,
   Switch,
-  PageToolbar,
   OverflowText,
   Select,
   useToast,
@@ -74,6 +75,9 @@ export function UsersPage() {
   const [total, setTotal] = useState(0);
   const [hasMore, setHasMore] = useState(false);
   const [search, setSearch] = useState('');
+  const searchInputId = useId();
+  const searchInputRef = useRef<globalThis.HTMLInputElement>(null);
+  const [searchComposing, setSearchComposing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -85,26 +89,44 @@ export function UsersPage() {
   const [confirmError, setConfirmError] = useState<string | null>(null);
   const [activationNotice, setActivationNotice] = useState<ActivationNotice | null>(null);
   const [pendingActivationNotice, setPendingActivationNotice] = useState<ActivationNotice | null>(null);
+  const pageRequestId = useRef(0);
+  const pageLoading = useRef(false);
 
-  const loadUsers = useCallback(async (offset = 0, append = false) => {
+  const loadUsers = useCallback(async (offset = 0, append = false, signal?: globalThis.AbortSignal) => {
+    if (append && pageLoading.current) return;
+    const requestId = ++pageRequestId.current;
+    pageLoading.current = true;
     if (append) setLoadingMore(true); else setLoading(true);
     setError(null);
     try {
       const params = new globalThis.URLSearchParams({ limit: String(PAGE_SIZE), offset: String(offset) });
       if (filter !== 'all') params.set('isActive', String(filter === 'active'));
       if (search.trim()) params.set('search', search.trim());
-      const result = await apiRequest<{ users: ManagedUser[]; total: number; hasMore: boolean }>('/users?' + params.toString());
+      const result = await apiRequest<{ users: ManagedUser[]; total: number; hasMore: boolean }>('/users?' + params.toString(), { signal });
+      if (signal?.aborted || requestId !== pageRequestId.current) return;
       setUsers((current) => append ? [...current, ...result.users] : result.users);
       setTotal(result.total);
       setHasMore(result.hasMore);
     } catch (caughtError) {
-      setError(getApiErrorMessage(caughtError, 'No se pudieron cargar los usuarios.'));
+      if (!signal?.aborted && requestId === pageRequestId.current) setError(getApiErrorMessage(caughtError, 'No se pudieron cargar los usuarios.'));
     } finally {
-      if (append) setLoadingMore(false); else setLoading(false);
+      if (!signal?.aborted && requestId === pageRequestId.current) {
+        pageLoading.current = false;
+        setLoadingMore(false);
+        setLoading(false);
+      }
     }
 
   }, [filter, search]);
-  useEffect(() => { void loadUsers(); }, [loadUsers]);
+  useEffect(() => {
+    pageRequestId.current++;
+    pageLoading.current = false;
+    setLoading(true);
+    if (searchComposing) return;
+    const controller = new globalThis.AbortController();
+    const timer = globalThis.setTimeout(() => { void loadUsers(0, false, controller.signal); }, search.trim() ? 300 : 0);
+    return () => { globalThis.clearTimeout(timer); controller.abort(); };
+  }, [loadUsers, search, searchComposing]);
 
   const visibleUsers = useMemo(() => {
     const normalized = search.trim().toLocaleLowerCase('es-CL');
@@ -134,6 +156,7 @@ export function UsersPage() {
 
   async function confirmAction() {
     if (!confirmTarget) return;
+    if (confirmTarget.action === 'reset' && confirmTarget.user.id === currentUser?.id) return;
     setConfirmBusy(true);
     setConfirmError(null);
     try {
@@ -157,34 +180,32 @@ export function UsersPage() {
 
   function openCreate() { setEditorState({ mode: 'new' }); setEditorOpen(true); }
   function openEdit(candidate: ManagedUser) { setEditorState({ mode: 'edit', user: candidate }); setEditorOpen(true); }
-  function askAction(action: ConfirmTarget['action'], candidate: ManagedUser) { setConfirmError(null); setConfirmTarget({ action, user: candidate }); setConfirmOpen(true); }
+  function askAction(action: ConfirmTarget['action'], candidate: ManagedUser) { if (action === 'reset' && candidate.id === currentUser?.id) return; setConfirmError(null); setConfirmTarget({ action, user: candidate }); setConfirmOpen(true); }
 
   const columns: Array<DataTableColumn<ManagedUser>> = [
     { key: 'displayName', mobileRole: 'identity', mobileLabel: 'Usuario', header: <TableHeader icon={<UserIcon />}>Usuario</TableHeader>, className: 'users-col-identity', render: (candidate) => <UserIdentity user={candidate} /> },
     { key: 'role', mobileLabel: 'Rol', header: <TableHeader icon={<ShieldIcon />}>Rol</TableHeader>, className: 'users-col-role', render: (candidate) => <RoleBadge role={candidate.role} /> },
     { key: 'status', mobileLabel: 'Estado', header: <TableHeader icon={<StatusIcon />}>Estado</TableHeader>, className: 'users-col-status', render: (candidate) => <StatusBadge user={candidate} /> },
-    { key: 'actions', mobileRole: 'actions', mobileLabel: 'Acciones', header: <TableHeader icon={<MoreIcon />}>Acciones</TableHeader>, className: 'users-col-actions', render: (candidate) => <UserActions candidate={candidate} onEdit={() => openEdit(candidate)} onStatus={() => askAction(candidate.isActive ? 'deactivate' : 'activate', candidate)} onReset={() => askAction('reset', candidate)} /> }
+    { key: 'actions', mobileRole: 'actions', mobileLabel: 'Acciones', header: <TableHeader icon={<MoreIcon />}>Acciones</TableHeader>, className: 'users-col-actions', render: (candidate) => <UserActions candidate={candidate} canReset={candidate.id !== currentUser?.id} onEdit={() => openEdit(candidate)} onStatus={() => askAction(candidate.isActive ? 'deactivate' : 'activate', candidate)} onReset={() => askAction('reset', candidate)} /> }
   ];
 
   return <PageContainer fluid className="catalog-page users-page">
     <div className="catalog-surface users-catalog-surface">
-      <header className="catalog-command-deck users-command-deck">
-        <div className="catalog-command-main">
-          <span className="catalog-command-mark"><UsersIcon /></span>
-          <div className="catalog-command-copy">
-            <span className="catalog-command-eyebrow">Administración / Vista activa</span>
-            <div className="catalog-command-title"><h1>Usuarios</h1></div>
-            <p>Administra las cuentas, roles y acceso de los usuarios del sistema.</p>
-          </div>
-        </div>
-      </header>
+      <ModuleHeader className="users-module-header" title="Gestión de usuarios" description="Administra las cuentas, roles y acceso de los usuarios del sistema." action={currentUser && canViewUsers(currentUser.role) && <Button onClick={openCreate}><PlusIcon />Nuevo usuario</Button>} />
       {error && <Alert className="catalog-error users-page-alert" variant="danger" icon={<AlertIcon />} action={<Button variant="secondary" size="sm" onClick={() => void loadUsers()}>Reintentar</Button>}>{error}</Alert>}
       <section className="catalog-section users-section" aria-labelledby="users-list-title">
         <h2 id="users-list-title" className="sr-only">Cuentas registradas</h2>
-        <PageToolbar className="catalog-toolbar users-toolbar" actions={currentUser && canViewUsers(currentUser.role) ? <Button onClick={openCreate}><PlusIcon />Nuevo usuario</Button> : undefined}>
-          <label className="catalog-search users-search"><span>Buscar</span><span className="catalog-search-control users-search-control"><SearchIcon /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Nombre, usuario o correo" /><button type="button" className={`users-search-clear${search ? ' users-search-clear-visible' : ''}`} onClick={() => setSearch('')} aria-label="Limpiar búsqueda" tabIndex={search ? 0 : -1}><CloseIcon /></button></span></label>
+        <ModuleFilters className="catalog-toolbar users-toolbar" ariaLabel="Filtros de usuarios">
+          <div className="catalog-search users-search">
+            <label htmlFor={searchInputId}>Buscar</label>
+            <span className="catalog-search-control users-search-control">
+              <SearchIcon />
+              <input id={searchInputId} ref={searchInputRef} value={search} onChange={(event) => setSearch(event.target.value)} onCompositionStart={() => setSearchComposing(true)} onCompositionEnd={() => setSearchComposing(false)} placeholder="Nombre, usuario o correo" />
+              <button type="button" className={`users-search-clear${search ? ' users-search-clear-visible' : ''}`} onClick={() => { setSearch(''); searchInputRef.current?.focus({ preventScroll: true }); }} aria-label="Limpiar búsqueda" tabIndex={search ? 0 : -1}><CloseIcon /></button>
+            </span>
+          </div>
           <label className="catalog-filter users-filter"><span>Estado</span><Select value={filter} onChange={(value) => setFilter(value as UserFilter)} options={FILTER_OPTIONS} /></label>
-        </PageToolbar>
+        </ModuleFilters>
         <div className="users-data-table-frame"><DataTable className="catalog-data-table users-data-table" rows={visibleUsers} columns={columns} getRowKey={(candidate) => candidate.id} caption="Usuarios registrados" error={visibleUsers.length === 0 ? error ?? undefined : undefined} loading={loading} loadingRows={6} empty={<EmptyState icon={<UsersIcon />} title={search || filter !== 'all' ? 'No hay coincidencias' : 'Todavía no hay usuarios'} description={search || filter !== 'all' ? 'Prueba con otros criterios de búsqueda.' : 'Crea el primer usuario para habilitar el acceso al sistema.'} action={search || filter !== 'all' ? <Button variant="secondary" onClick={() => { setSearch(''); setFilter('all'); }}>Limpiar filtros</Button> : <Button onClick={openCreate}><PlusIcon />Nuevo usuario</Button>} />} /></div>
         <UsersLoadMore error={error} loaded={users.length} total={total} hasMore={hasMore} loading={loadingMore} onLoadMore={() => void loadUsers(users.length, true)} />
       </section>
@@ -209,15 +230,7 @@ export function UsersPage() {
 }
 
 function UsersLoadMore({ loaded, total, hasMore, loading, error, onLoadMore }: { error?: string | null; loaded: number; total: number; hasMore: boolean; loading: boolean; onLoadMore: () => void }) {
-  const ref = useRef<globalThis.HTMLDivElement>(null);
-  useEffect(() => {
-    const element = ref.current;
-    if (!element || !hasMore || loading || error || !('IntersectionObserver' in globalThis)) return;
-    const observer = new globalThis.IntersectionObserver((entries) => { if (entries[0]?.isIntersecting) onLoadMore(); }, { rootMargin: '280px' });
-    observer.observe(element);
-    return () => observer.disconnect();
-  }, [error, hasMore, loading, onLoadMore]);
-  return <><div ref={ref} className="catalog-scroll-sentinel" aria-hidden="true" /><ListFooter loaded={loaded} total={total} hasMore={hasMore} loading={loading} onLoadMore={onLoadMore} /></>;
+  return <ListFooter loaded={loaded} total={total} hasMore={hasMore} loading={loading} onLoadMore={onLoadMore} />;
 }
 
 function confirmTitle(target: ConfirmTarget): string {
@@ -284,7 +297,7 @@ function ActivationCodeDialog({ notice, onClose }: { notice: ActivationNotice | 
 }
 
 function UserIdentity({ user }: { user: ManagedUser }) { return <div className="users-identity"><span className="users-avatar" aria-hidden="true">{userInitials(user.displayName)}</span><span className="users-identity-copy"><OverflowText as="strong" text={user.displayName} /><OverflowText as="small" text={`@${user.username}`} /></span></div>; }
-function UserActions({ candidate, onEdit, onStatus, onReset }: { candidate: ManagedUser; onEdit: () => void; onStatus: () => void; onReset: () => void }) { return <div className="users-row-actions"><Button variant="ghost" size="sm" onClick={onEdit}><EditIcon />Editar</Button><span className="users-status-switch"><Switch checked={candidate.isActive} onCheckedChange={onStatus} aria-label={'Cambiar estado de ' + candidate.displayName} /><small>{candidate.isActive ? 'Activo' : 'Inactivo'}</small></span><Button variant="ghost" size="sm" onClick={onReset}><KeyIcon />Restablecer</Button></div>; }
+function UserActions({ candidate, canReset, onEdit, onStatus, onReset }: { candidate: ManagedUser; canReset: boolean; onEdit: () => void; onStatus: () => void; onReset: () => void }) { return <div className="users-row-actions"><Button variant="ghost" size="sm" onClick={onEdit}><EditIcon />Editar</Button><span className="users-status-switch"><Switch checked={candidate.isActive} onCheckedChange={onStatus} aria-label={'Cambiar estado de ' + candidate.displayName} title={candidate.isActive ? 'Desactivar usuario' : 'Activar usuario'} /></span><Button variant="ghost" size="sm" onClick={onReset} disabled={!canReset} title={canReset ? 'Restablecer acceso' : 'Cambia tu contraseña en Mi cuenta'}><KeyIcon />Restablecer</Button></div>; }
 function RoleBadge({ role }: { role: AppRole }) { return <Badge className={'users-role-badge users-role-' + role.toLowerCase()} variant={role === 'JEFE' ? 'default' : role === 'COORDINADOR' ? 'info' : 'success'}><ShieldIcon /><OverflowText text={roleNames[role]} /></Badge>; }
 function StatusBadge({ user }: { user: ManagedUser }) { const status = statusFor(user); return <Badge className={'users-status-badge users-status-' + status} variant={status === 'active' ? 'success' : status === 'inactive' ? 'danger' : 'warning'}>{status === 'active' ? <CheckIcon /> : status === 'inactive' ? <DeactivateIcon /> : <ClockIcon />}<OverflowText text={statusLabel(status)} /></Badge>; }
 function TableHeader({ icon, children }: { icon: ReactNode; children: ReactNode }) { return <span className="users-table-header">{icon}{children}</span>; }

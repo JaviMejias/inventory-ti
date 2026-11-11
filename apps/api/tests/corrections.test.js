@@ -1,3 +1,5 @@
+import './require-test-database.js';
+
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { after, before, test } from 'node:test';

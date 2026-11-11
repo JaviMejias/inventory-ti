@@ -10,6 +10,10 @@ type BadgeProps = {
   className?: string;
 };
 
+const variantClasses: Record<BadgeVariant, string> = {
+  default: 'ui-badge-default', info: 'ui-badge-info', success: 'ui-badge-success', warning: 'ui-badge-warning', danger: 'ui-badge-danger', neutral: 'ui-badge-neutral'
+};
+
 export function Badge({ children, variant = 'default', className }: BadgeProps) {
-  return <span className={cx('ui-badge', `ui-badge-${variant}`, className)}>{children}</span>;
+  return <span className={cx('ui-badge', variantClasses[variant], className)}>{children}</span>;
 }

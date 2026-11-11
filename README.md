@@ -50,13 +50,14 @@ Las siguientes capacidades están documentadas, pero todavía no forman parte de
 Cada producto tiene:
 
 - nombre único global, sin distinguir mayúsculas/minúsculas;
-- SKU opcional y único;
+- SKU opcional y único, sin distinguir mayúsculas/minúsculas;
 - modo de seguimiento `QUANTITY` o `ASSET`;
 - umbral de stock bajo;
 - estado activo/inactivo;
 - fecha de creación y actualización.
 
 Solo `JEFE` administra productos. La inactivación no elimina el historial ni los movimientos existentes.
+El modo de seguimiento solo se puede cambiar mientras el producto no tenga stock registrado, movimientos ni activos.
 
 ### Inventario cuantitativo
 
@@ -103,15 +104,16 @@ Los activos no modifican el stock cuantitativo. La asignación de un equipo camb
 
 ### Correcciones
 
-Una corrección permite solicitar un delta firmado sobre un movimiento cuantitativo sin modificar el movimiento original.
+Una corrección indica la cantidad final firmada del movimiento (`correctedQuantity`), sin modificar el registro original. El backend calcula la diferencia frente a su efecto vigente, incluidas correcciones anteriores.
 
 - Todos los roles operativos pueden solicitar correcciones.
-- `JEFE` puede aprobar o rechazar.
-- El solicitante no puede aprobar su propia solicitud.
+- Las nuevas correcciones de `JEFE` se aplican directamente con auditoría; las de otros roles quedan pendientes.
+- Solo `JEFE` puede aprobar o rechazar pendientes; nadie puede revisar explícitamente su propia pendiente.
 - `COORDINADOR` y `SOPORTE` solo ven sus propias solicitudes.
 - Una aprobación crea un movimiento compensatorio `ADJUSTMENT`.
 - La aprobación actualiza stock y auditoría de forma atómica.
 - Una solicitud solo puede procesarse una vez.
+- Solo puede haber una pendiente por movimiento; después de procesarla se permite otra. El historial recalcula los saldos posteriores sin sumar dos veces la compensación.
 
 ### Dashboard
 
@@ -139,7 +141,7 @@ Actualmente no existe un endpoint backend dedicado `/dashboard`; la vista compon
 | Base de datos | PostgreSQL 14+ |
 | Frontend | React 19, TypeScript, Vite 6 |
 | Estilos | Tailwind CSS 3 y CSS propio |
-| Routing | React Router DOM 6 |
+| Routing | React Router DOM 7 |
 | Gráficos | Recharts |
 | Fechas | date-fns y `es-CL` |
 | Pruebas | Node.js built-in test runner (`node:test`) |
@@ -282,7 +284,9 @@ Este comando genera el cliente Prisma y ejecuta las migraciones pendientes con `
 pnpm bootstrap:admin
 ```
 
-El comando solicita username, nombre visible y contraseña. Solo funciona cuando no existen usuarios y nunca crea credenciales por defecto.
+El comando solicita, en orden: username, nombre visible, teléfono, email, contraseña y confirmación. Solo funciona cuando no existen usuarios, no necesita la API iniciada y nunca crea credenciales por defecto. Consulta la [guía de usuarios y recuperación](docs/deployment/users.md).
+
+En la terminal valida cada campo al ingresarlo y vuelve a pedir solo el dato incorrecto, conservando los demás. Antes de la contraseña indica sus requisitos; si la confirmación no coincide, solo se repite la confirmación. Las contraseñas permanecen ocultas. El modo por stdin mantiene seis líneas en el mismo orden y termina con error ante datos inválidos, sin crear usuarios.
 
 ### 6. Iniciar el sistema
 
@@ -311,9 +315,12 @@ La API y la aplicación web se ejecutan en paralelo mediante pnpm.
 | `API_HOST` | `0.0.0.0` | Dirección de escucha de Fastify. |
 | `API_PORT` | `3000` | Puerto de la API. |
 | `WEB_ORIGIN` | `http://localhost:5173` | Origen permitido por CORS. |
+| `TRUST_PROXY` | `loopback` | Proxies de confianza para obtener la IP del cliente; `false` sin proxy o lista de IP/CIDR explícitos. |
 | `SESSION_SECRET` | fallback solo en desarrollo | Mínimo 32 caracteres; obligatorio en producción. |
 | `SESSION_TTL_HOURS` | `8` | Duración absoluta de la sesión. |
 | `COOKIE_SECURE` | `false` | Debe ser `true` en producción con HTTPS. |
+| `COOKIE_SAME_SITE` | `lax` | `lax`, `strict` o `none`; `none` requiere Secure para solicitudes entre sitios. |
+| `TEST_DATABASE_URL` | sin configurar | Credenciales separadas para crear/eliminar bases temporales de pruebas; requiere `CREATEDB`. |
 
 ### Frontend
 
@@ -336,6 +343,7 @@ Ejecutar desde la raíz del repositorio:
 | `pnpm typecheck` | Ejecuta TypeScript en todos los paquetes. |
 | `pnpm build` | Compila todos los paquetes y aplicaciones. |
 | `pnpm test` | Ejecuta las pruebas de la API. Requiere PostgreSQL. |
+| `pnpm --filter @inventory-ti/web test` | Ejecuta las regresiones del frontend con Node; no requiere base de datos. |
 | `pnpm prisma:validate` | Valida el schema Prisma. |
 | `pnpm db:generate` | Genera el cliente Prisma. |
 | `pnpm db:migrate` | Genera el cliente y aplica migraciones pendientes. |
@@ -348,6 +356,7 @@ pnpm --filter @inventory-ti/api test
 pnpm --filter @inventory-ti/api typecheck
 pnpm --filter @inventory-ti/web typecheck
 pnpm --filter @inventory-ti/web build
+pnpm --filter @inventory-ti/web test
 ```
 
 ## Base de datos y migraciones
@@ -362,14 +371,19 @@ El schema se encuentra en [prisma/schema.prisma](prisma/schema.prisma). Las migr
 6. color histórico de categorías;
 7. snapshot del nombre de la persona asignada;
 8. ciclo de activación de usuarios;
-9. eliminación de categorías y unicidad global de productos.
+9. eliminación de categorías y unicidad global de productos;
+10. eliminación de ubicaciones y consolidación de stock por producto;
+11. cantidad final de correcciones y una pendiente por movimiento;
+12. unicidad de SKU normalizado y bloqueo del tracking mode de productos utilizados.
+
+Para una base existente, revisar [preflight y recuperación de migraciones](docs/deployment/database.md). Una falla no garantiza que toda la base quede intacta: migraciones anteriores del lote pueden estar aplicadas. La eliminación de categorías/ubicaciones exige respaldo verificado antes de ejecutar.
 
 Para crear una nueva migración durante el desarrollo:
 
 ```bash
-pnpm --filter @inventory-ti/api exec prisma migrate dev \
-  --schema ../../prisma/schema.prisma \
-  --name <nombre_de_migracion>
+node --env-file=.env apps/api/node_modules/prisma/build/index.js migrate dev \
+  --schema prisma/schema.prisma \
+  --name nombre_descriptivo_del_cambio
 ```
 
 En producción se debe utilizar `pnpm db:migrate` con `migrate deploy`. No utilizar `migrate reset` ni `db push --force-reset` contra una base de datos productiva.
@@ -419,7 +433,11 @@ Las pruebas usan el runner integrado de Node (`node:test`) y PostgreSQL. Cubren 
 pnpm test
 ```
 
-Se recomienda ejecutar las pruebas contra una base de datos desechable o dedicada para testing. El comando carga el `.env` de la raíz y utiliza `DATABASE_URL` si está exportada explícitamente.
+El comando carga el `.env` de la raíz, crea una base temporal `inventory_ti_test_<identificador>`, aplica las migraciones y la elimina al terminar. Nunca ejecuta pruebas sobre la base indicada en `DATABASE_URL`: solo utiliza sus credenciales para crear la base temporal. El usuario PostgreSQL necesita permiso `CREATEDB`; puedes usar credenciales separadas mediante `TEST_DATABASE_URL`. Los archivos de integración rechazan la ejecución directa sobre una base no aislada.
+
+Para instalaciones detrás de Vite/ngrok local, `TRUST_PROXY=loopback` conserva la IP del cliente para los límites de login y activación. En despliegues configura únicamente las IP/CIDR de tus proxies; usa `TRUST_PROXY=false` si no hay proxy. No se admite confiar en todos los orígenes.
+
+La limpieza de cuentas antiguas de pruebas se inspecciona con `pnpm --filter @inventory-ti/api quarantine:test-users`. Solo `--apply` desactiva las cuentas verificadas, elimina sus sesiones e invalida sus códigos de activación, sin borrar historial. La operación se rechaza si no quedaría un `JEFE` activo y con contraseña propia.
 
 Validación recomendada antes de integrar cambios:
 
@@ -447,8 +465,10 @@ El resultado queda en:
 Iniciar la API compilada:
 
 ```bash
-node apps/api/dist/server.js
+node --env-file=.env apps/api/dist/server.js
 ```
+
+Ejecutar desde la raíz; en producción el process manager debe inyectar el entorno. `pnpm --filter @inventory-ti/api start` no carga explícitamente `.env`. La [guía de producción](docs/deployment/production.md) incluye una plantilla systemd, proxy HTTPS, comprobaciones y actualización/rollback.
 
 En producción se espera:
 
@@ -473,6 +493,7 @@ Docker Compose, imágenes de contenedor, CI/CD y backups automatizados todavía 
 - Los códigos de activación se almacenan como hash y expiran.
 - La aplicación no utiliza JWT ni tokens en `localStorage`.
 - Los secretos deben provenir del entorno y no del repositorio.
+- La API impide desactivar, degradar o restablecer el acceso del último `JEFE` activo y con contraseña configurada (`LAST_ADMIN_REQUIRED`). Un JEFE pendiente no cuenta como reemplazo.
 
 Más información en [docs/technical/security.md](docs/technical/security.md).
 
@@ -485,7 +506,7 @@ Más información en [docs/technical/security.md](docs/technical/security.md).
 - No hay reportes exportables.
 - No hay almacenamiento de archivos.
 - El rate limiting es local al proceso y no distribuido.
-- No hay garantía automática de mantener siempre un `JEFE` activo.
+- No hay recuperación automática si ningún `JEFE` puede entrar; bootstrap no recupera una tabla de usuarios poblada. Requiere intervención autorizada, no reiniciar la base.
 
 ## Documentación
 
@@ -506,7 +527,10 @@ Más información en [docs/technical/security.md](docs/technical/security.md).
 - [Arquitectura](docs/technical/architecture.md)
 - [Estructura del repositorio](docs/technical/structure.md)
 - [Backend](docs/technical/backend.md)
+- [Contrato de correcciones](docs/technical/corrections.md)
 - [Frontend](docs/technical/frontend.md)
+- [Diseño compartido](DESIGN.md) y [contrato de interacción](UX-CONTRACT.md)
+- [Verificación del frontend](docs/technical/testing.md#frontend-verification)
 - [Base de datos](docs/technical/database.md)
 - [Seguridad](docs/technical/security.md)
 - [Testing](docs/technical/testing.md)
@@ -520,6 +544,7 @@ Más información en [docs/technical/security.md](docs/technical/security.md).
 - [Desarrollo local](docs/deployment/development.md)
 - [Configuración](docs/deployment/configuration.md)
 - [Base de datos y migraciones](docs/deployment/database.md)
+- [Creación de usuarios, activación y recuperación](docs/deployment/users.md)
 - [Producción](docs/deployment/production.md)
 - [Backups](docs/deployment/backups.md)
 - [Troubleshooting](docs/deployment/troubleshooting.md)

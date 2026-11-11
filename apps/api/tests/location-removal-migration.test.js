@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
+import { URL } from 'node:url';
 
 const migration = readFileSync(new URL('../../../prisma/migrations/0010_remove_locations/migration.sql', import.meta.url), 'utf8');
 

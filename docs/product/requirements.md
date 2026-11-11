@@ -59,12 +59,17 @@ Anything listed as "future extensibility" is anticipated in the architecture but
 
 ## 4. Functional requirements
 
+These requirements include planned capabilities, not a release-status checklist. The backend implements account lifecycle, products, quantity inventory, assets/assignments, corrections and audit writes. Realtime, uploads, Notification persistence and report exports are not implemented; there is no dedicated dashboard aggregation endpoint. Consult the [implemented API reference](../technical/backend.md#10-api-endpoints-current-implementation).
+
 ### 4.1 Authentication
 
 - FR-AUTH-1: Users authenticate with a username or email identifier and a password.
 - FR-AUTH-2: Sessions are HTTP-only cookies, with server-side session lifecycle.
 - FR-AUTH-3: Users can log out; logout invalidates the session.
 - FR-AUTH-4: Global (JEFE) administrators can manage users and roles.
+- FR-AUTH-5: First JEFE creation is explicit bootstrap on an empty user table, with no default credentials. New users configure their own password with a single-use 24-hour code; activation does not create a session.
+- FR-AUTH-6: JEFE access resets revoke password/sessions/prior codes; own password changes verify the current password. Own administrative reset is forbidden.
+- FR-AUTH-7: User administration must preserve one active, password-configured JEFE. Pending/inactive replacements do not count.
 
 ### 4.2 Catalog
 
@@ -73,6 +78,7 @@ Anything listed as "future extensibility" is anticipated in the architecture but
 - FR-CAT-3: A Product is tracked **either by quantity** (consumable) **or by assets** (individually tracked units). See [inventory.md](inventory.md) and [assets.md](assets.md).
 - FR-CAT-4: Each product has a low-stock threshold; a product is low stock when `current stock <= threshold`.
 - FR-CAT-5: The low-stock threshold is configured at **product level** in the MVP (not per location).
+- FR-CAT-6: Names and nonblank SKUs are globally unique case-insensitively after trimming; tracking mode cannot change after stock, movements or assets exist.
 
 ### 4.3 Inventory visibility
 
@@ -101,7 +107,7 @@ Anything listed as "future extensibility" is anticipated in the architecture but
 - FR-OP-1: Authorized users perform inventory operations: initialize, receive (ENTRY), issue (EXIT), return (RETURN), and adjust (ADJUSTMENT).
 - FR-OP-2: Every inventory operation creates an immutable InventoryMovement and atomically updates materialized current stock.
 - FR-OP-3: Normal inventory changes cannot be performed through arbitrary direct stock edits.
-- FR-OP-4: Realtime events are published for connected users after the operation commits.
+- FR-OP-4 (planned): Realtime events are published for connected users after the operation commits.
 
 ### 4.7 Corrections
 

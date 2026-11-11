@@ -12,7 +12,7 @@ Related documents:
 ## 1. Authentication model: sessions
 
 - **Session-based authentication.** No OAuth/OIDC/SSO.
-- Login identifier: **username or email** — final choice is an implementation-level decision (see TBDs).
+- Login identifier: **username or email**, implemented. Usernames use a restricted character set; username and email have separate unique constraints.
 - Passwords are validated against stored hashes.
 
 ### Session cookie
@@ -26,7 +26,7 @@ Related documents:
 ### Phase 3 implementation
 
 - Sessions are persisted in PostgreSQL in the `Session` table and contain only a hash of the random session token, the user reference, timestamps, and expiration.
-- The browser receives the raw token only in the `inventory_ti_session` cookie. The cookie is `HttpOnly`, uses `SameSite=Lax`, uses `Secure` when `COOKIE_SECURE=true`, and defaults to an eight-hour expiration.
+- The browser receives the raw token only in the host-only `inventory_ti_session` cookie. It is `HttpOnly`, has configurable SameSite (default `Lax`), uses `Secure` when `COOKIE_SECURE=true`, and defaults to eight-hour expiration. `SameSite=None` requires Secure. `WEB_ORIGIN` controls CORS, not cookie domain.
 - `SESSION_SECRET` must be configured with a sufficiently long random value in production; development and test environments may use the local-development fallback.
 - The API re-checks the session and the user's active status on every protected request. Inactive users cannot log in; deactivation deletes all of their sessions atomically with the status change.
 - Passwords use Node.js `scrypt` with a random salt. The API accepts passwords with at least 12 characters, including a letter and a number, and never returns `passwordHash`.
@@ -37,7 +37,9 @@ Related documents:
 
 ### Active administrator floor
 
-The current API does not enforce a minimum of one active `JEFE`: a `JEFE` can currently deactivate themselves or change their own role through the existing user administration operations. This behavior is documented for review and is not changed by the current hardening iteration. The minimum rule to decide before a future change is to reject any operation that would leave the system without an active `JEFE`.
+The API rejects deactivation, demotion or access reset that would remove the last **usable** JEFE (`409 LAST_ADMIN_REQUIRED`): active, role JEFE and password configured. Pending/inactive JEFEs do not count. User administration and fixture-account quarantine share a transaction advisory lock; the administrative actor is rechecked inside the transaction. Own access reset is separately forbidden (`403 SELF_ACCESS_RESET`). These are application invariants, not protection against direct operator SQL. See [user administration](../deployment/users.md).
+
+Login, activation and password changes serialize against account mutations with user row locks. Login rechecks that the verified hash and account state are unchanged under the lock; password change verifies the current password against locked state. This prevents sessions/password changes based on stale credentials after reset/deactivation.
 
 ## 2. Authorization
 
@@ -56,14 +58,14 @@ Corrections are backend-authorized and require CSRF for every mutation. All role
 
 ## 3. Passwords & secrets
 
-- Passwords: **securely hashed** (strong password hashing algorithm chosen at implementation).
+- Passwords: **scrypt-hashed** with a random salt; never returned through public user projections.
 - **Secrets come from environment/configuration** — never committed to the repository, never logged.
 - Secrets include: database credentials, session secret, CSRF secret (if separate), storage credentials (future).
 
 ## 4. CSRF protection (requirement)
 
 - Required for cookie-authenticated state-changing requests.
-- Must use a **server-validated CSRF mechanism** appropriate for cookie authentication (e.g., double-submit with server validation, or a synchronizer token). The exact mechanism is an implementation decision (see TBDs), but it must be validated server-side.
+- The implemented mechanism is a server-validated, session-bound HMAC-SHA256 token derived using `SESSION_SECRET` (details below).
 - State-changing requests (POST/PUT/PATCH/DELETE, and equivalent WebSocket-introduced mutations if any) carry the CSRF token.
 - CSRF tokens are never logged.
 
@@ -76,11 +78,14 @@ Corrections are backend-authorized and require CSRF for every mutation. All role
 ## 5. Rate limiting
 
 - Sensitive endpoints (e.g., login) should have **rate limiting**.
-- Exact limits are implementation decisions (see TBDs).
 
-Phase 3 applies an in-memory limit of 10 login attempts per source IP in a 15-minute window. This intentionally remains a small-process MVP control; a distributed rate-limit store is out of scope.
+Login and activation have separate in-memory limits per app instance: 10 failed plus in-flight attempts per source IP in 15 minutes. Reservations prevent parallel requests from bypassing the limit; successful attempts reset that endpoint's failure counter. The counters are not shared across processes and reset with process restart. A distributed store is not implemented.
 
-## 6. File uploads
+`TRUST_PROXY` defaults to `loopback`; use `false` without a proxy or explicit trusted IPs/CIDRs. Blanket trust and `/0` are rejected. Proxy topology must preserve an authenticated forwarding chain rather than trust arbitrary client headers. See [configuration](../deployment/configuration.md).
+
+## 6. File uploads (planned)
+
+No upload routes or file-storage adapter are implemented. These requirements apply if storage is added:
 
 - **Validate uploads**: MIME type, file size, and dimensions where applicable.
 - File bytes go through the storage abstraction (see [storage.md](storage.md)).

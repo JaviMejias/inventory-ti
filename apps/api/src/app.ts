@@ -12,9 +12,11 @@ import { registerInventoryRoutes } from './routes/inventory.js';
 import { registerAssetRoutes } from './routes/assets.js';
 import { registerAssignmentRoutes } from './routes/assignments.js';
 import { registerCorrectionRoutes } from './routes/corrections.js';
+import { registerImportPreviewRoutes } from './imports/routes.js';
+import { registerImportReviewRoutes } from './imports/review-routes.js';
 
 export function buildApp(database = prisma) {
-  const app = Fastify({ logger: true });
+  const app = Fastify({ logger: true, trustProxy: environment.TRUST_PROXY });
 
   app.register(cookie);
   app.register(cors, {
@@ -26,6 +28,13 @@ export function buildApp(database = prisma) {
     if (error instanceof ApiError) {
       request.log.warn({ code: error.code, statusCode: error.statusCode }, 'Request rejected');
       return reply.status(error.statusCode).send({ code: error.code, message: error.message, ...(error.details ? { details: error.details } : {}) });
+    }
+    const statusCode = typeof error === 'object' && error !== null && 'statusCode' in error ? error.statusCode : undefined;
+    if (typeof statusCode === 'number' && Number.isInteger(statusCode) && statusCode >= 400 && statusCode < 500) {
+      const code = statusCode === 413 ? 'PAYLOAD_TOO_LARGE' : statusCode === 415 ? 'UNSUPPORTED_MEDIA_TYPE' : 'VALIDATION_ERROR';
+      const message = statusCode === 413 ? 'Request body is too large' : statusCode === 415 ? 'Unsupported content type' : 'Invalid request';
+      request.log.warn({ code, statusCode }, 'Request rejected');
+      return reply.status(statusCode).send({ code, message });
     }
     request.log.error({ err: error }, 'Unhandled request error');
     return reply.status(500).send({
@@ -41,6 +50,8 @@ export function buildApp(database = prisma) {
   registerAssetRoutes(app, database);
   registerAssignmentRoutes(app, database);
   registerCorrectionRoutes(app, database);
+  registerImportPreviewRoutes(app, database);
+  registerImportReviewRoutes(app, database);
   app.addHook('onClose', async () => {
     await database.$disconnect();
   });

@@ -1,7 +1,8 @@
 import type { FastifyInstance, FastifyRequest } from 'fastify';
-import { Role, type Prisma, type PrismaClient } from '@prisma/client';
+import { Role, type Prisma, type PrismaClient, type Product } from '@prisma/client';
 
 import { ApiError } from '../lib/errors.js';
+import { lockProduct } from '../lib/product-lock.js';
 import { requireAuthenticated, requireCsrf, requireRole } from '../auth/service.js';
 import { catalogIdSchema, productCreateSchema, productListQuerySchema, productUpdateSchema } from './schemas.js';
 
@@ -22,11 +23,14 @@ function conflict(error: unknown, message: string): never {
   throw error;
 }
 
-function productResponse(product: { id: string; name: string; sku: string | null; trackingMode: 'QUANTITY' | 'ASSET'; lowStockThreshold: number; isActive: boolean; createdAt: Date; updatedAt: Date }) {
+function productResponse(product: Product) {
   return {
     id: product.id,
     name: product.name,
     sku: product.sku,
+    equipmentType: product.equipmentType,
+    brand: product.brand,
+    model: product.model,
     trackingMode: product.trackingMode,
     lowStockThreshold: product.lowStockThreshold,
     active: product.isActive,
@@ -74,7 +78,10 @@ export function registerCatalogRoutes(app: FastifyInstance, database: PrismaClie
     const query = parse(productListQuerySchema, request.query);
     const where = {
       ...(query.active === undefined ? {} : { isActive: query.active }),
-      ...(query.search ? { OR: [{ name: { contains: query.search, mode: 'insensitive' as const } }, { sku: { contains: query.search, mode: 'insensitive' as const } }] } : {})
+      ...(query.equipmentType ? { equipmentType: { contains: query.equipmentType, mode: 'insensitive' as const } } : {}),
+      ...(query.brand ? { brand: { contains: query.brand, mode: 'insensitive' as const } } : {}),
+      ...(query.model ? { model: { contains: query.model, mode: 'insensitive' as const } } : {}),
+      ...(query.search ? { OR: ['name', 'sku', 'equipmentType', 'brand', 'model'].map((field) => ({ [field]: { contains: query.search, mode: 'insensitive' as const } })) } : {})
     };
     const [products, total] = await database.$transaction([
       database.product.findMany({
@@ -97,7 +104,7 @@ export function registerCatalogRoutes(app: FastifyInstance, database: PrismaClie
       const product = await database.$transaction(async (transaction) => {
         await ensureProductAvailable(transaction, { name: input.name, sku });
         const created = await transaction.product.create({ data: { ...input, sku } });
-        await writeAudit(transaction, request.auth!.user.id, 'PRODUCT_CREATED', created.id, { name: created.name });
+        await writeAudit(transaction, request.auth!.user.id, 'PRODUCT_CREATED', created.id, { name: created.name, equipmentType: created.equipmentType, brand: created.brand, model: created.model });
         return getProductOrFail(transaction, created.id);
       });
       return reply.status(201).send({ product: productResponse(product) });
@@ -111,11 +118,24 @@ export function registerCatalogRoutes(app: FastifyInstance, database: PrismaClie
     const input = parse(productUpdateSchema, request.body);
     try {
       const product = await database.$transaction(async (transaction) => {
-        const current = await getProductOrFail(transaction, id);
+        const current = await lockProduct(transaction, id);
+        if (input.trackingMode !== undefined && input.trackingMode !== current.trackingMode) {
+          const [stock, movement, asset] = await Promise.all([
+            transaction.inventoryStock.findUnique({ where: { productId: id }, select: { id: true } }),
+            transaction.inventoryMovement.findFirst({ where: { productId: id }, select: { id: true } }),
+            transaction.asset.findFirst({ where: { productId: id }, select: { id: true } })
+          ]);
+          if (stock || movement || asset) throw new ApiError(409, 'PRODUCT_TRACKING_MODE_LOCKED', 'The tracking mode cannot change after inventory or assets have been registered');
+        }
         const sku = input.sku === undefined ? undefined : normalizeSku(input.sku);
         await ensureProductAvailable(transaction, { name: input.name ?? current.name, sku }, id);
         const updated = await transaction.product.update({ where: { id }, data: { ...input, sku } });
-        await writeAudit(transaction, request.auth!.user.id, 'PRODUCT_UPDATED', id, { fields: Object.keys(input) });
+        const fields = Object.keys(input).filter((key) => input[key as keyof typeof input] !== undefined) as Array<keyof typeof input>;
+        await writeAudit(transaction, request.auth!.user.id, 'PRODUCT_UPDATED', id, {
+          fields,
+          before: Object.fromEntries(fields.map((field) => [field, current[field]])),
+          after: Object.fromEntries(fields.map((field) => [field, updated[field]]))
+        });
         return getProductOrFail(transaction, updated.id);
       });
       return { product: productResponse(product) };
